@@ -1,0 +1,23 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "name": "yolo26-train",
+  "namespace": "profiling",
+  "targetContainer": "trainer",
+  "image": "ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757",
+  "command": [
+    "/bin/sh"
+  ],
+  "args": [
+    "-ceu",
+    "yolo detect train \\\n  model=yolo26n.yaml \\\n  data=/dataset/data.yaml \\\n  epochs=2 \\\n  imgsz=320 \\\n  batch=4 \\\n  workers=0 \\\n  device=0 \\\n  pretrained=False \\\n  amp=False \\\n  plots=False \\\n  project=/training-output \\\n  name=yolo26-synthetic-exit7 \\\n  exist_ok=True\necho phase5-application-exit7-marker\nexit 7\n"
+  ],
+  "gpuResource": "nvidia.com/gpu.shared",
+  "gpuMode": "shared",
+  "gpuLimits": "1",
+  "gpuRequests": "1",
+  "volumes": [
+    "dataset",
+    "training-output"
+  ]
+}

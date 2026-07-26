@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: profile-artifacts-pvc-probe
+  namespace: profiling
+  labels:
+    app.kubernetes.io/name: profile-artifacts-pvc-probe
+    profile-job-builder.local/test-phase: phase-4
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: profile-artifacts-pvc-probe
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/hostname: gx10-c206
+      securityContext:
+        fsGroup: 65532
+      containers:
+        - name: probe
+          image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+          command:
+            - /bin/sh
+            - -ceu
+          args:
+            - |
+              marker=/profile-output/.profile-job-builder-pvc-probe
+              token=profile-job-builder-persistence-probe-v1
+              if [ -f "$marker" ]; then
+                test "$(cat "$marker")" = "$token"
+                rm -f "$marker"
+                printf 'marker-persisted-after-pod-deletion\n'
+              else
+                printf '%s\n' "$token" > "$marker"
+                sync "$marker"
+                printf 'marker-written\n'
+              fi
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 65532
+          volumeMounts:
+            - name: profile-output
+              mountPath: /profile-output
+      volumes:
+        - name: profile-output
+          persistentVolumeClaim:
+            claimName: profile-artifacts

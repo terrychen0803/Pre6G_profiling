@@ -1,0 +1,22 @@
+Phase 2 shared-GPU RuntimeClass visibility smoke
+Date: 2026-07-24
+Context: profile-job-builder@k3s
+Namespace: profiling
+Job: shared-gpu-runtimeclass-smoke
+Node: gx10-c206
+RuntimeClass: nvidia
+Requested resource: nvidia.com/gpu.shared: "1"
+
+Result:
+
+cuda_visible_devices=None
+torch_cuda_available=True
+torch_cuda_device_count=1
+torch_cuda_device_name=NVIDIA GB10
+shared-gpu-runtimeclass-smoke-passed
+
+Conclusion:
+
+The GX10 workload must use `runtimeClassName: nvidia` in addition to requesting
+`nvidia.com/gpu.shared: "1"`. CUDA visibility does not depend on
+CUDA_VISIBLE_DEVICES being populated in this runtime configuration.

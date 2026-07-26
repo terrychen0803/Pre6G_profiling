@@ -1,0 +1,5 @@
+time="2026-07-25T12:49:46+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:49:46+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:49:46+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+NAME                             STATUS    COMPLETIONS   DURATION   AGE   CONTAINERS                  IMAGES                                                                                                                                                                                                      SELECTOR
+phase5-success-20260725-124855   Running   0/1           1s         1s    trainer,profile-collector   ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757,ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab   batch.kubernetes.io/controller-uid=84cce846-bd55-4a97-a23a-64ce63970269

@@ -1,0 +1,30 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# Runtime output and locally generated Profile Jobs
+artifacts/
+profile-job.yaml
+manual-runs/
+
+# Kubernetes credentials and local overrides
+*.kubeconfig
+.kube/
+.env
+.env.*
+!.env.example
+
+# Nsight Systems runtime output (keep curated textual evidence and checksums)
+*.nsys-rep
+*.sqlite
+*.qdrep
+*.qdstrm
+**/nvidia/nsight_systems/

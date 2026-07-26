@@ -1,0 +1,19 @@
+usage: profile-job-builder collect [-h] --job JOB --container CONTAINER
+                                   --destination DESTINATION
+                                   --profile-job-yaml PROFILE_JOB_YAML
+                                   [--namespace NAMESPACE]
+                                   [--kubeconfig KUBECONFIG]
+                                   [--context CONTEXT] [--timeout TIMEOUT]
+
+options:
+  -h, --help            show this help message and exit
+  --job JOB
+  --container CONTAINER
+  --destination, -o DESTINATION
+  --profile-job-yaml PROFILE_JOB_YAML
+                        Locally reviewed Profile Job YAML (avoids requiring
+                        get jobs RBAC)
+  --namespace NAMESPACE
+  --kubeconfig KUBECONFIG
+  --context CONTEXT
+  --timeout TIMEOUT

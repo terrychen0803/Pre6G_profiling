@@ -1,0 +1,35 @@
+Phase 1 Kubernetes hostPath smoke test
+Date: 2026-07-24
+Manifest: examples/smoke/nsys-hostpath-job.yaml
+Context: profile-job-builder@k3s
+
+Result:
+job.batch/nsys-hostpath-smoke condition met
+status.succeeded=1
+
+Pod:
+NAME                         NODE        PHASE       UID     HOSTPATH
+nsys-hostpath-smoke-zt6zp    gx10-c206   Succeeded   65532   /opt/nvidia/nsight-systems/2025.3.2
+
+Container output:
+NVIDIA Nsight Systems version 2025.3.2.474-253236389321v0
+Timestamp counter supported: Yes
+
+CPU Profiling Environment Check
+Root privilege: disabled
+Linux Kernel Paranoid Level = 4
+Linux Distribution = Ubuntu
+Linux Kernel Version = 6.17.0-1026-nvidia: OK
+Linux perf_event_open syscall available: Fail
+Sampling trigger event available: Fail
+CPU Profiling Environment (process-tree): Fail
+CPU Profiling Environment (system-wide): Fail
+
+hostPath smoke passed
+
+Interpretation:
+- read/execute of the mounted Target CLI succeeded as non-root UID 65532.
+- CPU sampling is intentionally disabled by the Phase 1 contract (`--sample=none`);
+  the environment check failures do not block CUDA/NVTX/OS runtime tracing.
+- The recurring config.yaml.d permission warning was ignored; no
+  /etc/rancher/k3s permissions were changed.

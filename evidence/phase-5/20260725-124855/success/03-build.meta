@@ -1,0 +1,5 @@
+start=2026-07-25T12:49:29+08:00
+cwd=/home/good_egg/profile-job-builder
+command=.venv/bin/profile-job-builder build --input fixtures/phase-5/yolo26-success.yaml --container trainer --name phase5-success-20260725-124855 --artifact-pvc profile-artifacts --output evidence/phase-5/20260725-124855/success/profile-job.yaml 
+end=2026-07-25T12:49:29+08:00
+exit_code=0

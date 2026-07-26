@@ -1,0 +1,44 @@
+Phase 4 PVC persistence verification
+Date: 2026-07-24
+Namespace: profiling
+Node: gx10-c206
+
+PVC:
+
+NAME                STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+profile-artifacts   Bound    pvc-5dac95f5-f419-4469-a18a-a531b8dbf677   20Gi       RWO            local-path     2m48s
+
+Writer Job:
+
+- Job: profile-artifacts-pvc-probe
+- Pod: profile-artifacts-pvc-probe-tvj2q
+- Pod status: Completed
+- Node: gx10-c206
+- Log:
+
+  node=profile-artifacts-pvc-probe-tvj2q
+  timestamp=2026-07-24T12:51:46+00:00
+  pvc-write-ok
+
+The writer Job and Pod were deleted before readback.
+
+Readback Job:
+
+- Job: profile-artifacts-pvc-readback
+- Pod: profile-artifacts-pvc-readback-pk7sc
+- Pod status: Completed
+- Node: gx10-c206
+- Log:
+
+  stored-content:
+  timestamp=2026-07-24T12:51:46+00:00
+  pvc-persistence-ok
+
+The readback Job was deleted after verification.
+
+Conclusion:
+
+- `profiling/profile-artifacts` is present and Bound.
+- A Pod on gx10-c206 can write the PVC.
+- A second Pod can read the data after the writer Pod and Job are deleted.
+- B-003 is resolved.

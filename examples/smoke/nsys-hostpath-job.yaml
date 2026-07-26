@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nsys-hostpath-smoke
+  namespace: profiling
+  labels:
+    app.kubernetes.io/name: nsys-hostpath-smoke
+    profile-job-builder.local/test-phase: phase-1
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nsys-hostpath-smoke
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/hostname: gx10-c206
+      containers:
+        - name: smoke
+          image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+          command:
+            - /bin/sh
+            - -ceu
+          args:
+            - |
+              nsys=/opt/profiler/nsys/target-linux-sbsa-armv8/nsys
+              test -r "$nsys"
+              test -x "$nsys"
+              "$nsys" --version
+              mkdir -p /tmp/nsys-smoke
+              TMPDIR=/tmp/nsys-smoke "$nsys" status --environment || true
+              printf 'hostPath smoke passed\n'
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 65532
+          volumeMounts:
+            - name: nsys-runtime
+              mountPath: /opt/profiler/nsys
+              readOnly: true
+      volumes:
+        - name: nsys-runtime
+          hostPath:
+            path: /opt/nvidia/nsight-systems/2025.3.2
+            type: Directory

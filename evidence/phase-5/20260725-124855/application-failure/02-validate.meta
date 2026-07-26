@@ -1,0 +1,5 @@
+start=2026-07-25T12:51:34+08:00
+cwd=/home/good_egg/profile-job-builder
+command=.venv/bin/profile-job-builder validate --input fixtures/phase-5/yolo26-application-exit7.yaml --container trainer 
+end=2026-07-25T12:51:34+08:00
+exit_code=0

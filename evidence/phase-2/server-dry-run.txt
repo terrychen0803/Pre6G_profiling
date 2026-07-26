@@ -1,0 +1,14 @@
+Phase 2 server-side dry-run
+Date: 2026-07-24
+Context: profile-job-builder@k3s
+Namespace: profiling
+Kubernetes client/server: v1.35.4+k3s1
+
+$ kubectl create --dry-run=server -f examples/yolo26/manual-profile-job.yaml
+job.batch/yolo26-train-manual-profile created (server dry run)
+
+$ kubectl create --dry-run=server -f examples/yolo26/generated-profile-job.yaml
+job.batch/yolo26-train-profile created (server dry run)
+
+The recurring /etc/rancher/k3s/config.yaml.d permission warning was ignored.
+No Job was persisted by these commands.

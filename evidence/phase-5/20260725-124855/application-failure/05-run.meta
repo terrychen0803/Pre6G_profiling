@@ -1,0 +1,5 @@
+start=2026-07-25T12:51:45+08:00
+cwd=/home/good_egg/profile-job-builder
+command=.venv/bin/profile-job-builder run --input evidence/phase-5/20260725-124855/application-failure/profile-job.yaml --kubeconfig /home/good_egg/.kube/profile-job-builder.kubeconfig --context profile-job-builder@k3s --namespace profiling 
+end=2026-07-25T12:51:45+08:00
+exit_code=0

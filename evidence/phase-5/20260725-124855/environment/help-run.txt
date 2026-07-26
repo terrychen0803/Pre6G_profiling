@@ -1,0 +1,11 @@
+usage: profile-job-builder run [-h] --input INPUT [--kubeconfig KUBECONFIG]
+                               [--context CONTEXT] [--namespace NAMESPACE]
+                               [--skip-server-dry-run]
+
+options:
+  -h, --help            show this help message and exit
+  --input, -i INPUT
+  --kubeconfig KUBECONFIG
+  --context CONTEXT
+  --namespace NAMESPACE
+  --skip-server-dry-run

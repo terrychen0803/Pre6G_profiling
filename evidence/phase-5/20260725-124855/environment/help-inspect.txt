@@ -1,0 +1,7 @@
+usage: profile-job-builder inspect [-h] --input INPUT [--container CONTAINER]
+
+options:
+  -h, --help            show this help message and exit
+  --input, -i INPUT     Source Kubernetes Job YAML
+  --container CONTAINER
+                        Target application container name

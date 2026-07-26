@@ -1,0 +1,10 @@
+time="2026-07-25T12:53:44+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:53:44+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:53:44+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:53:54+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:53:54+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:53:54+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:53:54+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:53:54+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:53:54+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+error: collection failed: stats_failure; diagnostic artifacts saved at /home/good_egg/profile-job-builder/evidence/phase-5/20260725-124855/collector-failure/artifacts

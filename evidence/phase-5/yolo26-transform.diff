@@ -1,0 +1,165 @@
+--- examples/yolo26/user-job.yaml
++++ profile-job.yaml
+@@ -1,15 +1,21 @@
+ apiVersion: batch/v1
+ kind: Job
+ metadata:
+-  name: yolo26-train
++  name: yolo26-train-profile
+   labels:
+     app.kubernetes.io/name: yolo26-train
++    profile-job-builder.local/enabled: 'true'
++  annotations:
++    profile-job-builder.local/source-job: yolo26-train
++    profile-job-builder.local/spec-version: v1.2
++    profile-job-builder.local/original-command: '["yolo","detect","train","model=yolo26n.yaml","data=/dataset/data.yaml","epochs=2","imgsz=320","batch=4","workers=0","device=0","pretrained=False","amp=False","plots=False","project=/training-output","name=yolo26-synthetic","exist_ok=True"]'
+ spec:
+   backoffLimit: 0
+   template:
+     metadata:
+       labels:
+         app.kubernetes.io/name: yolo26-train
++        profile-job-builder.local/enabled: 'true'
+     spec:
+       restartPolicy: Never
+       initContainers:
+@@ -48,13 +54,42 @@
+         volumeMounts:
+         - name: dataset
+           mountPath: /dataset
++      - name: profile-output-init
++        image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
++        command:
++        - /bin/sh
++        - -ceu
++        args:
++        - 'if [ -d /profile-output/yolo26-train-profile ] && [ -n "$(find /profile-output/yolo26-train-profile
++          -mindepth 1 -maxdepth 1 -print -quit)" ]; then printf ''refusing to reuse non-empty artifact
++          directory: /profile-output/yolo26-train-profile\n'' >&2; exit 73; fi; mkdir -p /profile-output/yolo26-train-profile
++          && chmod 0777 /profile-output/yolo26-train-profile'
++        resources:
++          requests:
++            cpu: 5m
++            memory: 8Mi
++          limits:
++            cpu: 100m
++            memory: 32Mi
++        volumeMounts:
++        - name: profile-output
++          mountPath: /profile-output
++        securityContext:
++          allowPrivilegeEscalation: false
++          capabilities:
++            drop:
++            - ALL
+       containers:
+       - name: trainer
+         image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+         imagePullPolicy: IfNotPresent
+         command:
++        - /opt/profiler/nsys/target-linux-sbsa-armv8/nsys
++        args:
++        - profile
++        - --trace=cuda,nvtx,osrt
++        - --sample=none
++        - --cpuctxsw=none
++        - --force-overwrite=true
++        - --output=/profile-output/yolo26-train-profile/profile
+         - yolo
+-        args:
+         - detect
+         - train
+         - model=yolo26n.yaml
+@@ -73,6 +108,10 @@
+         env:
+         - name: YOLO_CONFIG_DIR
+           value: /tmp/ultralytics
++        - name: TMPDIR
++          value: /profile-output/yolo26-train-profile
++        - name: PROFILE_OUTPUT_DIR
++          value: /profile-output/yolo26-train-profile
+         resources:
+           requests:
+             cpu: '2'
+@@ -87,8 +126,71 @@
+           mountPath: /dataset
+         - name: training-output
+           mountPath: /training-output
++        - name: nsys-runtime
++          mountPath: /opt/profiler/nsys
++          readOnly: true
++        - name: profile-output
++          mountPath: /profile-output
++      - name: profile-collector
++        image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
++        command:
++        - /bin/sh
++        - -ceu
++        args:
++        - |
++          report=/profile-output/yolo26-train-profile/profile.nsys-rep
++          deadline=$(( $(date +%s) + 3600 ))
++          while [ ! -s "$report" ]; do
++            if [ "$(date +%s)" -ge "$deadline" ]; then
++              printf 'timed out waiting for %s\n' "$report" >&2
++              exit 124
++            fi
++            sleep 2
++          done
++          mkdir -p /profile-output/yolo26-train-profile/tmp-collector
++          export TMPDIR=/profile-output/yolo26-train-profile/tmp-collector
++          /opt/profiler/nsys/target-linux-sbsa-armv8/nsys stats --force-export=true --report=osrt_sum,cuda_api_sum,cuda_gpu_kern_sum,cuda_gpu_mem_time_sum,cuda_gpu_mem_size_sum,nvtx_sum "$report" > /profile-output/yolo26-train-profile/nsys-stats.txt
++          /opt/profiler/nsys/target-linux-sbsa-armv8/nsys stats --format=csv --report=osrt_sum,cuda_api_sum,cuda_gpu_kern_sum,cuda_gpu_mem_time_sum,cuda_gpu_mem_size_sum,nvtx_sum "$report" > /profile-output/yolo26-train-profile/nsys-stats.csv
++          report_size=$(wc -c < "$report")
++          set -- $(sha256sum "$report")
++          report_sha256=$1
++          nsys_version=$(/opt/profiler/nsys/target-linux-sbsa-armv8/nsys --version)
++          finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
++          printf '{"status":"collected","job":"%s","report_size":%s,"report_sha256":"%s","nsys_version":"%s","finished_at":"%s"}\n'   "$PROFILE_JOB_NAME" "$report_size" "$report_sha256" "$nsys_version" "$finished_at"   > /profile-output/yolo26-train-profile/profile-metadata.json
++          touch /profile-output/yolo26-train-profile/.collector-ready
++          collection_deadline=$(( $(date +%s) + 3600 ))
++          while [ ! -f /profile-output/yolo26-train-profile/.collected ]; do
++            if [ "$(date +%s)" -ge "$collection_deadline" ]; then
++              printf 'timed out waiting for artifact collection acknowledgement\n' >&2
++              exit 125
++            fi
++            sleep 2
++          done
++        env:
++        - name: PROFILE_JOB_NAME
++          value: yolo26-train-profile
++        resources:
++          requests:
++            cpu: 50m
++            memory: 128Mi
++          limits:
++            cpu: '1'
++            memory: 1Gi
++        volumeMounts:
++        - name: nsys-runtime
++          mountPath: /opt/profiler/nsys
++          readOnly: true
++        - name: profile-output
++          mountPath: /profile-output
++        securityContext:
++          allowPrivilegeEscalation: false
++          capabilities:
++            drop:
++            - ALL
+       volumes:
+       - name: dataset
+         emptyDir: {}
+       - name: training-output
+         emptyDir: {}
++      - name: nsys-runtime
++        hostPath:
++          path: /opt/nvidia/nsight-systems/2025.3.2
++          type: Directory
++      - name: profile-output
++        persistentVolumeClaim:
++          claimName: profile-artifacts
++      nodeSelector:
++        kubernetes.io/hostname: gx10-c206
++      runtimeClassName: nvidia
++  parallelism: 1
++  completions: 1

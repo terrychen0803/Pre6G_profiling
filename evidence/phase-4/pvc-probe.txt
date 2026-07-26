@@ -1,0 +1,27 @@
+Phase 4 PVC existence and persistence probe
+Date: 2026-07-24
+Context: profile-job-builder@k3s
+Namespace: profiling
+Manifest: examples/smoke/profile-artifacts-pvc-probe.yaml
+
+The restricted ServiceAccount has no PVC get/create permission, so existence was
+tested indirectly through an authorized batch/v1 Job that referenced the claim.
+
+Result:
+
+NAME                                READY   STATUS    NODE
+profile-artifacts-pvc-probe-9pqw5   0/1     Pending   <none>
+
+Scheduler event:
+
+0/6 nodes are available: persistentvolumeclaim "profile-artifacts" not found.
+not found
+
+Conclusion:
+
+- `profiling/profile-artifacts` does not exist.
+- The probe Pod was never scheduled or started and wrote no data.
+- The probe Job and Pod were deleted after evidence collection.
+- An administrator with PVC create permission must create the claim before the
+  YOLO26 Profile Job can run.
+- No `/etc/rancher/k3s` permissions were changed.

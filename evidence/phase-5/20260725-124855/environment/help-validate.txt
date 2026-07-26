@@ -1,0 +1,10 @@
+usage: profile-job-builder validate [-h] --input INPUT [--container CONTAINER]
+                                    [--entrypoint ENTRYPOINT] [--arg ARG]
+
+options:
+  -h, --help            show this help message and exit
+  --input, -i INPUT     Source Kubernetes Job YAML
+  --container CONTAINER
+                        Target application container name
+  --entrypoint ENTRYPOINT
+  --arg ARG

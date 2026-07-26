@@ -1,0 +1,8 @@
+usage: profile-job-builder [-h]
+                           {inspect,validate,build,diff,run,collect,clean} ...
+
+positional arguments:
+  {inspect,validate,build,diff,run,collect,clean}
+
+options:
+  -h, --help            show this help message and exit

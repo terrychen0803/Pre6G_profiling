@@ -1,0 +1,5 @@
+start=2026-07-25T12:49:57+08:00
+cwd=/home/good_egg/profile-job-builder
+command=.venv/bin/profile-job-builder collect --job phase5-success-20260725-124855 --container trainer --destination evidence/phase-5/20260725-124855/success/artifacts --profile-job-yaml evidence/phase-5/20260725-124855/success/profile-job.yaml --kubeconfig /home/good_egg/.kube/profile-job-builder.kubeconfig --context profile-job-builder@k3s --namespace profiling --timeout 900 
+end=2026-07-25T12:50:08+08:00
+exit_code=0

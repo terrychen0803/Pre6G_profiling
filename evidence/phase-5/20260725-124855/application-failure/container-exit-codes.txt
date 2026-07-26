@@ -1,0 +1,6 @@
+time="2026-07-25T12:52:33+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:52:33+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:52:33+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+pod=phase5-appfail-20260725-124855-m58v7
+container=profile-collector exit=27 reason=Error
+container=trainer exit=7 reason=Error

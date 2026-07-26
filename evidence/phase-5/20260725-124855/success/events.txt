@@ -1,0 +1,19 @@
+time="2026-07-25T12:50:34+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:50:34+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:50:34+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+LAST SEEN   TYPE     REASON             OBJECT                                     MESSAGE
+48s         Normal   Scheduled          pod/phase5-success-20260725-124855-t7vbv   Successfully assigned profiling/phase5-success-20260725-124855-t7vbv to gx10-c206
+48s         Normal   SuccessfulCreate   job/phase5-success-20260725-124855         Created pod: phase5-success-20260725-124855-t7vbv
+46s         Normal   Pulled             pod/phase5-success-20260725-124855-t7vbv   Container image "ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757" already present on machine and can be accessed by the pod
+46s         Normal   Created            pod/phase5-success-20260725-124855-t7vbv   Container created
+46s         Normal   Started            pod/phase5-success-20260725-124855-t7vbv   Container started
+45s         Normal   Started            pod/phase5-success-20260725-124855-t7vbv   Container started
+45s         Normal   Created            pod/phase5-success-20260725-124855-t7vbv   Container created
+45s         Normal   Pulled             pod/phase5-success-20260725-124855-t7vbv   Container image "ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab" already present on machine and can be accessed by the pod
+44s         Normal   Pulled             pod/phase5-success-20260725-124855-t7vbv   Container image "ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757" already present on machine and can be accessed by the pod
+44s         Normal   Created            pod/phase5-success-20260725-124855-t7vbv   Container created
+44s         Normal   Started            pod/phase5-success-20260725-124855-t7vbv   Container started
+44s         Normal   Pulled             pod/phase5-success-20260725-124855-t7vbv   Container image "ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab" already present on machine and can be accessed by the pod
+44s         Normal   Created            pod/phase5-success-20260725-124855-t7vbv   Container created
+44s         Normal   Started            pod/phase5-success-20260725-124855-t7vbv   Container started
+24s         Normal   Completed          job/phase5-success-20260725-124855         Job completed

@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: shared-gpu-runtimeclass-smoke
+  namespace: profiling
+  labels:
+    app.kubernetes.io/name: shared-gpu-runtimeclass-smoke
+    profile-job-builder.local/test-phase: phase-2
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shared-gpu-runtimeclass-smoke
+    spec:
+      restartPolicy: Never
+      runtimeClassName: nvidia
+      nodeSelector:
+        kubernetes.io/hostname: gx10-c206
+      containers:
+        - name: cuda-visibility
+          image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+          command:
+            - python3
+          args:
+            - -c
+            - |
+              import os
+              import torch
+
+              print(f"cuda_visible_devices={os.getenv('CUDA_VISIBLE_DEVICES')}")
+              print(f"torch_cuda_available={torch.cuda.is_available()}")
+              print(f"torch_cuda_device_count={torch.cuda.device_count()}")
+              assert torch.cuda.is_available()
+              assert torch.cuda.device_count() >= 1
+              print(f"torch_cuda_device_name={torch.cuda.get_device_name(0)}")
+              print("shared-gpu-runtimeclass-smoke-passed")
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+              nvidia.com/gpu.shared: "1"
+            limits:
+              cpu: "1"
+              memory: 2Gi
+              nvidia.com/gpu.shared: "1"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

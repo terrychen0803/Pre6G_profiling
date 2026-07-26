@@ -1,0 +1,7 @@
+applicationProfilerExitCode=PASS
+collectorExitCode=PASS
+overallStatus=PASS
+failureReason=PASS
+reportValid=PASS
+statsComplete=PASS
+localChecksumMatch=PASS

@@ -1,0 +1,5 @@
+time="2026-07-25T12:49:47+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:49:47+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:49:47+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+NAME                                   READY   STATUS     RESTARTS   AGE   IP       NODE        NOMINATED NODE   READINESS GATES
+phase5-success-20260725-124855-t7vbv   0/2     Init:0/2   0          1s    <none>   gx10-c206   <none>           <none>

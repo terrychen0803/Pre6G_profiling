@@ -1,0 +1,390 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    profile-job-builder.local/original-command: '["yolo","detect","train","model=yolo26n.yaml","data=/dataset/data.yaml","epochs=2","imgsz=320","batch=4","workers=0","device=0","pretrained=False","amp=False","plots=False","project=/training-output","name=yolo26-synthetic","exist_ok=True"]'
+    profile-job-builder.local/source-job: yolo26-train
+    profile-job-builder.local/spec-version: v1.2
+  creationTimestamp: "2026-07-25T04:53:34Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/name: yolo26-train
+    profile-job-builder.local/enabled: "true"
+  name: phase5-colfail-20260725-124855
+  namespace: profiling
+  resourceVersion: "2981646"
+  uid: e51405f4-0724-460a-82ca-999da3b4ff45
+spec:
+  backoffLimit: 0
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: e51405f4-0724-460a-82ca-999da3b4ff45
+  suspend: false
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yolo26-train
+        batch.kubernetes.io/controller-uid: e51405f4-0724-460a-82ca-999da3b4ff45
+        batch.kubernetes.io/job-name: phase5-colfail-20260725-124855
+        controller-uid: e51405f4-0724-460a-82ca-999da3b4ff45
+        job-name: phase5-colfail-20260725-124855
+        profile-job-builder.local/enabled: "true"
+    spec:
+      containers:
+      - args:
+        - |
+          report=/profile-output/phase5-colfail-20260725-124855/profile.nsys-rep
+          set +e
+          /opt/profiler/nsys/target-linux-sbsa-armv8/nsys profile   --trace=cuda,nvtx,osrt   --sample=none   --cpuctxsw=none   --force-overwrite=true   --output=/profile-output/phase5-colfail-20260725-124855/profile   "$@"
+          application_exit_code=$?
+          set -e
+          if [ -e "$report" ]; then
+            set -- $(sha256sum "$report")
+            printf '%s\n' "$1" > /profile-output/phase5-colfail-20260725-124855/.expected-sha256
+          fi
+          printf '%s\n' "$application_exit_code" > /profile-output/phase5-colfail-20260725-124855/.application-finished
+          exit "$application_exit_code"
+        - --
+        - yolo
+        - detect
+        - train
+        - model=yolo26n.yaml
+        - data=/dataset/data.yaml
+        - epochs=2
+        - imgsz=320
+        - batch=4
+        - workers=0
+        - device=0
+        - pretrained=False
+        - amp=False
+        - plots=False
+        - project=/training-output
+        - name=yolo26-synthetic
+        - exist_ok=True
+        command:
+        - /bin/sh
+        - -ceu
+        env:
+        - name: YOLO_CONFIG_DIR
+          value: /tmp/ultralytics
+        - name: TMPDIR
+          value: /profile-output/phase5-colfail-20260725-124855
+        - name: PROFILE_OUTPUT_DIR
+          value: /profile-output/phase5-colfail-20260725-124855
+        image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+        imagePullPolicy: IfNotPresent
+        name: trainer
+        resources:
+          limits:
+            cpu: "8"
+            memory: 16Gi
+            nvidia.com/gpu.shared: "1"
+          requests:
+            cpu: "2"
+            memory: 4Gi
+            nvidia.com/gpu.shared: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /dataset
+          name: dataset
+        - mountPath: /training-output
+          name: training-output
+        - mountPath: /opt/profiler/nsys
+          name: nsys-runtime
+          readOnly: true
+        - mountPath: /profile-output
+          name: profile-output
+      - args:
+        - |
+          report=/profile-output/phase5-colfail-20260725-124855/profile.nsys-rep
+          application_finished=/profile-output/phase5-colfail-20260725-124855/.application-finished
+          expected_checksum_file=/profile-output/phase5-colfail-20260725-124855/.expected-sha256
+          ready=/profile-output/phase5-colfail-20260725-124855/.collector-ready
+          ack=/profile-output/phase5-colfail-20260725-124855/.collected
+          metadata=/profile-output/phase5-colfail-20260725-124855/profile-metadata.json
+          stats_stderr=/profile-output/phase5-colfail-20260725-124855/nsys-stats.stderr.txt
+          nsys_binary="${NSYS_BINARY_OVERRIDE:-/opt/profiler/nsys/target-linux-sbsa-armv8/nsys}"
+          required_reports="${PROFILE_REQUIRED_REPORTS:-osrt_sum cuda_api_sum cuda_gpu_kern_sum cuda_gpu_mem_time_sum cuda_gpu_mem_size_sum}"
+          report_exists=false
+          report_size_bytes=0
+          report_valid=false
+          stats_complete=false
+          expected_checksum=
+          actual_checksum=
+          checksum_match=false
+          application_exit_code=
+
+          write_metadata() {
+            overall_status=$1
+            failure_reason=$2
+            collector_exit_code=$3
+            nsys_version=$("$nsys_binary" --version 2>/dev/null | head -n 1 | tr '"' "'" || true)
+            finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            printf '{"status":"%s","overall_status":"%s","failure_reason":"%s","application_exit_code":%s,"report_exists":%s,"report_size_bytes":%s,"report_valid":%s,"expected_checksum":"%s","actual_checksum":"%s","checksum_match":%s,"stats_complete":%s,"collector_exit_code":%s,"nsys_version":"%s","finished_at":"%s"}\n'     "$overall_status" "$overall_status" "$failure_reason"     "${application_exit_code:-null}" "$report_exists" "$report_size_bytes"     "$report_valid" "$expected_checksum" "$actual_checksum" "$checksum_match"     "$stats_complete" "$collector_exit_code" "$nsys_version" "$finished_at"     > "$metadata"
+          }
+
+          await_collection_ack() {
+            result=$1
+            touch "$ready"
+            collection_deadline=$(( $(date +%s) + 3600 ))
+            while [ ! -f "$ack" ]; do
+              if [ "$(date +%s)" -ge "$collection_deadline" ]; then
+                failure_reason=collection_ack_timeout
+                write_metadata failed "$failure_reason" 125
+                exit 125
+              fi
+              sleep 2
+            done
+            exit "$result"
+          }
+
+          fail_collection() {
+            failure_reason=$1
+            collector_exit_code=$2
+            write_metadata failed "$failure_reason" "$collector_exit_code"
+            await_collection_ack "$collector_exit_code"
+          }
+
+          deadline=$(( $(date +%s) + 3600 ))
+          while [ ! -f "$application_finished" ]; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              fail_collection application_timeout 124
+            fi
+            sleep 2
+          done
+
+          application_exit_code=$(cat "$application_finished")
+          case "$application_exit_code" in
+            ''|*[!0-9]*) fail_collection invalid_application_exit_code 126 ;;
+          esac
+
+          if [ ! -e "$report" ]; then
+            fail_collection missing_report 20
+          fi
+          report_exists=true
+          report_size_bytes=$(wc -c < "$report")
+          if [ "$report_size_bytes" -eq 0 ]; then
+            fail_collection empty_report 21
+          fi
+
+          if [ ! -s "$expected_checksum_file" ]; then
+            fail_collection expected_checksum_missing 22
+          fi
+          expected_checksum=$(cat "$expected_checksum_file")
+          set -- $(sha256sum "$report")
+          actual_checksum=$1
+          if [ "$expected_checksum" != "$actual_checksum" ]; then
+            fail_collection integrity_failure 23
+          fi
+          checksum_match=true
+
+          mkdir -p /profile-output/phase5-colfail-20260725-124855/tmp-collector
+          export TMPDIR=/profile-output/phase5-colfail-20260725-124855/tmp-collector
+          parts=/profile-output/phase5-colfail-20260725-124855/stats-parts
+          mkdir -p "$parts"
+          : > "$stats_stderr"
+
+          run_stats() {
+            stats_report_name=$1
+            stats_format=$2
+            stats_output=$3
+            stats_error="$stats_output.stderr"
+            if [ "$stats_format" = csv ]; then
+              "$nsys_binary" stats --force-export=true --format=csv       --report="$stats_report_name" "$report"       > "$stats_output" 2> "$stats_error"
+              stats_exit=$?
+            else
+              "$nsys_binary" stats --force-export=true --report="$stats_report_name" "$report"       > "$stats_output" 2> "$stats_error"
+              stats_exit=$?
+            fi
+            cat "$stats_error" >> "$stats_stderr"
+            if [ "$stats_exit" -ne 0 ] || [ ! -s "$stats_output" ]; then
+              return 1
+            fi
+            if grep -Eiq 'Exportation error:|ERROR:' "$stats_output" "$stats_error"; then
+              printf 'nsys stats emitted an error despite exit code %s:\n' "$stats_exit"       >> "$stats_stderr"
+              cat "$stats_output" >> "$stats_stderr"
+              return 1
+            fi
+            return 0
+          }
+
+          if ! run_stats osrt_sum text "$parts/report-validation.txt"; then
+            header=$(head -c 28 "$report" || true)
+            case "$header" in
+              "NVIDIA Tegra Profiler Report"*) fail_collection corrupted_report 24 ;;
+              *) fail_collection parse_failure 25 ;;
+            esac
+          fi
+          report_valid=true
+
+          required_reports_csv=$(printf '%s' "$required_reports" | tr ' ' ',')
+          all_reports="$required_reports_csv,nvtx_sum"
+          stats_text_candidate="$parts/nsys-stats.txt.partial"
+          stats_csv_candidate="$parts/nsys-stats.csv.partial"
+          if ! run_stats "$all_reports" text "$stats_text_candidate"; then
+            fail_collection stats_failure 26
+          fi
+          if ! run_stats "$all_reports" csv "$stats_csv_candidate"; then
+            fail_collection stats_failure 26
+          fi
+
+          for summary in   'OS Runtime Summary'   'CUDA API Summary'   'CUDA GPU Kernel Summary'   'CUDA GPU MemOps Summary (by Time)'   'CUDA GPU MemOps Summary (by Size)'; do
+            if ! grep -Fq "$summary" "$stats_text_candidate"; then
+              printf 'required summary missing: %s\n' "$summary" >> "$stats_stderr"
+              fail_collection stats_failure 26
+            fi
+          done
+
+          mv "$stats_text_candidate" /profile-output/phase5-colfail-20260725-124855/nsys-stats.txt
+          mv "$stats_csv_candidate" /profile-output/phase5-colfail-20260725-124855/nsys-stats.csv
+          stats_complete=true
+          if [ "$application_exit_code" -ne 0 ]; then
+            fail_collection application_exit_nonzero 27
+          fi
+          write_metadata success none 0
+          await_collection_ack 0
+        command:
+        - /bin/sh
+        - -ceu
+        env:
+        - name: PROFILE_JOB_NAME
+          value: phase5-colfail-20260725-124855
+        - name: PROFILE_REQUIRED_REPORTS
+          value: osrt_sum cuda_api_sum definitely_not_a_report
+        image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+        imagePullPolicy: IfNotPresent
+        name: profile-collector
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/profiler/nsys
+          name: nsys-runtime
+          readOnly: true
+        - mountPath: /profile-output
+          name: profile-output
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - args:
+        - -c
+        - |
+          from pathlib import Path
+          from PIL import Image, ImageDraw
+
+          root = Path("/dataset")
+          for split, count in (("train", 8), ("val", 4)):
+              images = root / "images" / split
+              labels = root / "labels" / split
+              images.mkdir(parents=True, exist_ok=True)
+              labels.mkdir(parents=True, exist_ok=True)
+              for index in range(count):
+                  image = Image.new("RGB", (320, 320), (32, 32, 32))
+                  draw = ImageDraw.Draw(image)
+                  draw.rectangle((80, 80, 240, 240), fill=(220, 80, 80))
+                  image.save(images / f"{index}.jpg")
+                  (labels / f"{index}.txt").write_text(
+                      "0 0.5 0.5 0.5 0.5\n", encoding="utf-8"
+                  )
+          (root / "data.yaml").write_text(
+              "path: /dataset\n"
+              "train: images/train\n"
+              "val: images/val\n"
+              "names:\n"
+              "  0: object\n",
+              encoding="utf-8",
+          )
+        command:
+        - python3
+        image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+        imagePullPolicy: IfNotPresent
+        name: create-synthetic-dataset
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /dataset
+          name: dataset
+      - args:
+        - 'if [ -d /profile-output/phase5-colfail-20260725-124855 ] && [ -n "$(find
+          /profile-output/phase5-colfail-20260725-124855 -mindepth 1 -maxdepth 1 -print
+          -quit)" ]; then printf ''refusing to reuse non-empty artifact directory:
+          /profile-output/phase5-colfail-20260725-124855\n'' >&2; exit 73; fi; mkdir
+          -p /profile-output/phase5-colfail-20260725-124855 && chmod 0777 /profile-output/phase5-colfail-20260725-124855'
+        command:
+        - /bin/sh
+        - -ceu
+        image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+        imagePullPolicy: IfNotPresent
+        name: profile-output-init
+        resources:
+          limits:
+            cpu: 100m
+            memory: 32Mi
+          requests:
+            cpu: 5m
+            memory: 8Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /profile-output
+          name: profile-output
+      nodeSelector:
+        kubernetes.io/hostname: gx10-c206
+      restartPolicy: Never
+      runtimeClassName: nvidia
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: dataset
+      - emptyDir: {}
+        name: training-output
+      - hostPath:
+          path: /opt/nvidia/nsight-systems/2025.3.2
+          type: Directory
+        name: nsys-runtime
+      - name: profile-output
+        persistentVolumeClaim:
+          claimName: profile-artifacts
+status:
+  conditions:
+  - lastProbeTime: "2026-07-25T04:53:58Z"
+    lastTransitionTime: "2026-07-25T04:53:58Z"
+    message: Job has reached the specified backoff limit
+    reason: BackoffLimitExceeded
+    status: "True"
+    type: FailureTarget
+  - lastProbeTime: "2026-07-25T04:53:58Z"
+    lastTransitionTime: "2026-07-25T04:53:58Z"
+    message: Job has reached the specified backoff limit
+    reason: BackoffLimitExceeded
+    status: "True"
+    type: Failed
+  failed: 1
+  ready: 0
+  startTime: "2026-07-25T04:53:34Z"
+  terminating: 0
+  uncountedTerminatedPods: {}

@@ -1,0 +1,9 @@
+usage: profile-job-builder clean [-h] --job JOB [--namespace NAMESPACE]
+                                 [--kubeconfig KUBECONFIG] [--context CONTEXT]
+
+options:
+  -h, --help            show this help message and exit
+  --job JOB
+  --namespace NAMESPACE
+  --kubeconfig KUBECONFIG
+  --context CONTEXT

@@ -1,0 +1,98 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: yolo26-train
+  namespace: profiling
+  labels:
+    app.kubernetes.io/name: yolo26-train
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yolo26-train
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: create-synthetic-dataset
+          image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+          command:
+            - python3
+          args:
+            - -c
+            - |
+              from pathlib import Path
+              from PIL import Image, ImageDraw
+
+              root = Path("/dataset")
+              for split, count in (("train", 8), ("val", 4)):
+                  images = root / "images" / split
+                  labels = root / "labels" / split
+                  images.mkdir(parents=True, exist_ok=True)
+                  labels.mkdir(parents=True, exist_ok=True)
+                  for index in range(count):
+                      image = Image.new("RGB", (320, 320), (32, 32, 32))
+                      draw = ImageDraw.Draw(image)
+                      draw.rectangle((80, 80, 240, 240), fill=(220, 80, 80))
+                      image.save(images / f"{index}.jpg")
+                      (labels / f"{index}.txt").write_text(
+                          "0 0.5 0.5 0.5 0.5\n", encoding="utf-8"
+                      )
+              (root / "data.yaml").write_text(
+                  "path: /dataset\n"
+                  "train: images/train\n"
+                  "val: images/val\n"
+                  "names:\n"
+                  "  0: object\n",
+                  encoding="utf-8",
+              )
+          volumeMounts:
+            - name: dataset
+              mountPath: /dataset
+      containers:
+        - name: trainer
+          image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - -ceu
+            - |
+              yolo detect train \
+                model=yolo26n.yaml \
+                data=/dataset/data.yaml \
+                epochs=2 \
+                imgsz=320 \
+                batch=4 \
+                workers=0 \
+                device=0 \
+                pretrained=False \
+                amp=False \
+                plots=False \
+                project=/training-output \
+                name=yolo26-synthetic-exit7 \
+                exist_ok=True
+              echo phase5-application-exit7-marker
+              exit 7
+          env:
+            - name: YOLO_CONFIG_DIR
+              value: /tmp/ultralytics
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+              nvidia.com/gpu.shared: "1"
+            limits:
+              cpu: "8"
+              memory: 16Gi
+              nvidia.com/gpu.shared: "1"
+          volumeMounts:
+            - name: dataset
+              mountPath: /dataset
+            - name: training-output
+              mountPath: /training-output
+      volumes:
+        - name: dataset
+          emptyDir: {}
+        - name: training-output
+          emptyDir: {}

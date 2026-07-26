@@ -1,0 +1,11 @@
+--- evidence/phase-5/20260725-124855/collector-failure/profile-job.before-failure-injection.yaml	2026-07-25 12:53:11.660560510 +0800
++++ evidence/phase-5/20260725-124855/collector-failure/profile-job.yaml	2026-07-25 12:53:15.709281654 +0800
+@@ -300,6 +300,8 @@
+         env:
+         - name: PROFILE_JOB_NAME
+           value: phase5-colfail-20260725-124855
++        - name: PROFILE_REQUIRED_REPORTS
++          value: osrt_sum cuda_api_sum definitely_not_a_report
+         resources:
+           requests:
+             cpu: 50m

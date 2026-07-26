@@ -1,0 +1,29 @@
+usage: profile-job-builder diff [-h] --input INPUT [--container CONTAINER]
+                                [--output OUTPUT] [--name NAME] [--node NODE]
+                                [--nsys-host-path NSYS_HOST_PATH]
+                                [--artifact-pvc ARTIFACT_PVC]
+                                [--collector-image COLLECTOR_IMAGE]
+                                [--init-image INIT_IMAGE]
+                                [--collector-timeout COLLECTOR_TIMEOUT]
+                                [--no-collector] [--ephemeral-output]
+                                [--entrypoint ENTRYPOINT] [--arg ARG]
+
+options:
+  -h, --help            show this help message and exit
+  --input, -i INPUT     Source Kubernetes Job YAML
+  --container CONTAINER
+                        Target application container name
+  --output, -o OUTPUT   Output YAML (stdout when omitted)
+  --name NAME           Generated Profile Job name
+  --node NODE
+  --nsys-host-path NSYS_HOST_PATH
+  --artifact-pvc ARTIFACT_PVC
+  --collector-image COLLECTOR_IMAGE
+  --init-image INIT_IMAGE
+  --collector-timeout COLLECTOR_TIMEOUT
+  --no-collector
+  --ephemeral-output    Use emptyDir instead of the artifact PVC (not
+                        persistent)
+  --entrypoint ENTRYPOINT
+                        Full replacement executable
+  --arg ARG             Replacement argument; repeat as needed

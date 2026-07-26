@@ -1,0 +1,19 @@
+timestamp=2026-07-25T12:49:17+08:00
+hostname=gx10-c206
+user=good_egg
+pwd=/home/good_egg/profile-job-builder
+git_sha=UNAVAILABLE_NOT_A_GIT_WORKTREE
+workspace_tree_sha256=3dfea61316924e614789dc710c989773ddfc08e11ac46866fb8ecf649ca3fe0f
+python=Python 3.14.6
+kubectl=Kustomize Version: v5.7.1
+context=profile-job-builder@k3s
+time="2026-07-25T12:49:17+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:49:17+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:49:17+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+NAME        STATUS   ROLES    AGE   VERSION        INTERNAL-IP     EXTERNAL-IP     OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+gx10-c206   Ready    <none>   22h   v1.35.4+k3s1   140.113.179.4   140.113.179.4   Ubuntu 24.04.4 LTS   6.17.0-1026-nvidia   containerd://2.2.3-k3s1
+time="2026-07-25T12:49:17+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:49:17+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-25T12:49:17+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+gpu=
+gpu_shared=4

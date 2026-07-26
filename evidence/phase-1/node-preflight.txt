@@ -1,0 +1,181 @@
+
+[identity]
+timestamp_utc=2026-07-24T08:31:37Z
+hostname=gx10-c206
+architecture=aarch64
+kernel=6.17.0-1026-nvidia
+PASS  hostname is gx10-c206
+PASS  architecture is aarch64
+
+[nsight-systems]
+$ nsys --version
+NVIDIA Nsight Systems version 2025.3.2.474-253236389321v0
+PASS  nsys CLI is executable
+nsys_launcher=/usr/local/cuda/bin/nsys
+nsys_target_root=/opt/nvidia/nsight-systems/2025.3.2/target-linux-sbsa-armv8
+PASS  Nsight target root is an absolute directory
+$ /opt/nvidia/nsight-systems/2025.3.2/target-linux-sbsa-armv8/nsys --version
+NVIDIA Nsight Systems version 2025.3.2.474-253236389321v0
+PASS  mounted target nsys is executable
+PASS  Nsight target root files are readable by uid 1000
+$ nsys status --environment
+Timestamp counter supported: Yes
+
+CPU Profiling Environment Check
+Root privilege: disabled
+Linux Kernel Paranoid Level = 4
+Linux Distribution = Ubuntu
+Linux Kernel Version = 6.17.0-1026-nvidia: OK
+Linux perf_event_open syscall available: Fail
+Sampling trigger event available: Fail
+Intel(c) Last Branch Record support: Not Available
+CPU Profiling Environment (process-tree): Fail
+CPU Profiling Environment (system-wide): Fail
+
+See the product documentation at https://docs.nvidia.com/nsight-systems for more information,
+including information on how to set the Linux Kernel Paranoid Level.
+WARN  CPU sampling is unavailable; Phase 1 requires --sample=none
+
+[gpu]
+$ nvidia-smi --query-gpu=name\,driver_version --format=csv\,noheader
+NVIDIA GB10, 580.159.03
+PASS  NVIDIA driver and GPU are visible
+
+[kubernetes]
+WARN  Kubernetes checks skipped by request
+
+[cuda-smoke-test]
+temporary_output=/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke
+$ /opt/nvidia/nsight-systems/2025.3.2/target-linux-sbsa-armv8/nsys profile --trace=cuda,nvtx,osrt --sample=none --cpuctxsw=none --force-overwrite=true --output=/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke bash -lc /tmp/profile-job-builder-cuda-smoke
+CUDA smoke test completed
+Collecting data...
+Generating '/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/nsys-report-9e6f.qdstrm'
+[1/1] [0%                          ] cuda-smoke.nsys-rep[1/1] [0%                          ] cuda-smoke.nsys-rep[1/1] [=======39%                  ] cuda-smoke.nsys-rep[1/1] [==================78%       ] cuda-smoke.nsys-rep[1/1] [=====================89%    ] cuda-smoke.nsys-rep[1/1] [========================100%] cuda-smoke.nsys-rep[1/1] [========================100%] cuda-smoke.nsys-rep
+Generated:
+	/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.nsys-rep
+PASS  host CUDA profile produced a non-empty report
+$ /opt/nvidia/nsight-systems/2025.3.2/target-linux-sbsa-armv8/nsys stats /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.nsys-rep
+Generating SQLite file /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite from /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.nsys-rep
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/nvtx_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain NV Tools Extension (NVTX) data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/osrt_sum.py]... 
+
+ ** OS Runtime Summary (osrt_sum):
+
+ Time (%)  Total Time (ns)  Num Calls   Avg (ns)   Med (ns)   Min (ns)  Max (ns)   StdDev (ns)           Name         
+ --------  ---------------  ---------  ----------  ---------  --------  ---------  -----------  ----------------------
+     63.2        320965088         11  29178644.4  1159312.0      2096  160044928   52526287.2  poll                  
+     33.3        168887632        431    391850.7     8464.0      1008    6275664     996884.3  ioctl                 
+      2.9         14714896         18    817494.2   702712.0     24400    1616688     574087.6  mlock                 
+      0.3          1647040         22     74865.5     5432.0      1616     509616     125485.1  mmap64                
+      0.1           423584          8     52948.0    13360.0      5504     132544      58652.3  sem_timedwait         
+      0.0           228240         24      9510.0     4768.0      1072     107536      21048.3  mmap                  
+      0.0           159552         26      6136.6     3112.0      1216      37968       8470.3  fopen                 
+      0.0           124992         38      3289.3     2448.0      1120      11136       2348.1  open64                
+      0.0            99520          2     49760.0    49760.0     33648      65872      22785.8  pthread_create        
+      0.0            67360          1     67360.0    67360.0     67360      67360          0.0  pthread_cond_wait     
+      0.0            43648          3     14549.3    15536.0      2256      25856      11830.9  fgets                 
+      0.0            41088          4     10272.0    10344.0      7360      13040       2616.2  fread                 
+      0.0            33520         16      2095.0     1568.0      1024       4816       1181.4  fclose                
+      0.0            21088          6      3514.7     2944.0      1008       6672       2137.2  write                 
+      0.0            19152         10      1915.2     1888.0      1312       2800        453.4  read                  
+      0.0            18544          4      4636.0     5048.0      1472       6976       2420.6  open                  
+      0.0            17712          6      2952.0     2152.0      1040       5824       2050.3  close                 
+      0.0            17136          3      5712.0     6272.0      3088       7776       2393.6  pipe2                 
+      0.0            12992          2      6496.0     6496.0      3152       9840       4729.1  socket                
+      0.0             8464          1      8464.0     8464.0      8464       8464          0.0  connect               
+      0.0             5632          1      5632.0     5632.0      5632       5632          0.0  pthread_cond_broadcast
+      0.0             4912          2      2456.0     2456.0      1712       3200       1052.2  fwrite                
+      0.0             4912          1      4912.0     4912.0      4912       4912          0.0  fcntl                 
+      0.0             2368          1      2368.0     2368.0      2368       2368          0.0  bind                  
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/cuda_api_sum.py]... 
+
+ ** CUDA API Summary (cuda_api_sum):
+
+ Time (%)  Total Time (ns)  Num Calls   Avg (ns)     Med (ns)    Min (ns)   Max (ns)   StdDev (ns)           Name         
+ --------  ---------------  ---------  -----------  -----------  ---------  ---------  -----------  ----------------------
+     99.8        177679504          1  177679504.0  177679504.0  177679504  177679504          0.0  cudaMalloc            
+      0.1           150000          1     150000.0     150000.0     150000     150000          0.0  cudaFree              
+      0.1           143600          1     143600.0     143600.0     143600     143600          0.0  cuLibraryLoadData     
+      0.0            55856          1      55856.0      55856.0      55856      55856          0.0  cudaDeviceSynchronize 
+      0.0            52464          1      52464.0      52464.0      52464      52464          0.0  cudaLaunchKernel      
+      0.0            23072          1      23072.0      23072.0      23072      23072          0.0  cudaMemset            
+      0.0             5696          1       5696.0       5696.0       5696       5696          0.0  cuKernelGetName       
+      0.0              624          1        624.0        624.0        624        624          0.0  cuModuleGetLoadingMode
+      0.0              240          1        240.0        240.0        240        240          0.0  cuLibraryGetKernel    
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/cuda_gpu_kern_sum.py]... 
+
+ ** CUDA GPU Kernel Summary (cuda_gpu_kern_sum):
+
+ Time (%)  Total Time (ns)  Instances  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)                 Name               
+ --------  ---------------  ---------  --------  --------  --------  --------  -----------  ----------------------------------
+    100.0            35776          1   35776.0   35776.0     35776     35776          0.0  <unnamed>::increment(float *, int)
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/cuda_gpu_mem_time_sum.py]... 
+
+ ** CUDA GPU MemOps Summary (by Time) (cuda_gpu_mem_time_sum):
+
+ Time (%)  Total Time (ns)  Count  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)    Operation  
+ --------  ---------------  -----  --------  --------  --------  --------  -----------  -------------
+    100.0            14944      1   14944.0   14944.0     14944     14944          0.0  [CUDA memset]
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/cuda_gpu_mem_size_sum.py]... 
+
+ ** CUDA GPU MemOps Summary (by Size) (cuda_gpu_mem_size_sum):
+
+ Total (MB)  Count  Avg (MB)  Med (MB)  Min (MB)  Max (MB)  StdDev (MB)    Operation  
+ ----------  -----  --------  --------  --------  --------  -----------  -------------
+      4.194      1     4.194     4.194     4.194     4.194        0.000  [CUDA memset]
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/openmp_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain OpenMP event data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/opengl_khr_range_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain KHR Extension (KHR_DEBUG) data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/opengl_khr_gpu_range_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain GPU KHR Extension (KHR_DEBUG) data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/vulkan_marker_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain Vulkan Debug Extension (Vulkan Debug Util) data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/vulkan_gpu_marker_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain GPU Vulkan Debug Extension (GPU Vulkan Debug markers) data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/dx11_pix_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain DX11 CPU debug markers.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/dx12_gpu_marker_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain DX12 GPU debug markers.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/dx12_pix_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain DX12 CPU debug markers.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/wddm_queue_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain WDDM context data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/um_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain CUDA memory transfers data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/um_total_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain CUDA memory transfers data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/um_cpu_page_faults_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain CUDA Unified Memory CPU page faults data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/openacc_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain OpenACC event data.
+
+Processing [/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-armv8/reports/syscall_sum.py]... 
+SKIPPED: /home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.sqlite does not contain syscall data.
+
+PASS  host CUDA report is parseable
+smoke_report=/home/good_egg/profile-job-builder/evidence/phase-1/cuda-smoke/cuda-smoke.nsys-rep
+
+[summary]
+pass=9
+fail=0
+warn=2
