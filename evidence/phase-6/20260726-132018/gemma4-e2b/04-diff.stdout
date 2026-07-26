@@ -1,0 +1,304 @@
+--- examples/external/gemma4-e2b/gx10-source-job.yaml
++++ evidence/phase-6/20260726-132018/gemma4-e2b/profile-job.yaml
+@@ -1,16 +1,30 @@
+ apiVersion: batch/v1
+ kind: Job
+ metadata:
+-  name: external-gemma4-e2b
++  name: phase6-gemma4-20260726-132018
+   namespace: profiling
+   labels:
+     phase6.pre6g.local/case: gemma4-e2b
++    profile-job-builder.local/enabled: 'true'
++  annotations:
++    profile-job-builder.local/source-job: external-gemma4-e2b
++    profile-job-builder.local/spec-version: v1.2
++    profile-job-builder.local/original-command: '["python3","-c","import torch\nfrom transformers import
++      AutoModelForMultimodalLM, AutoProcessor\n\nmodel_id = \"unsloth/gemma-4-E2B-it-qat-w4a16\"\nrevision
++      = \"123e194\"\nassert torch.cuda.is_available(), \"CUDA is required\"\nprocessor = AutoProcessor.from_pretrained(\n    model_id,\n    revision=revision,\n)\nmodel
++      = AutoModelForMultimodalLM.from_pretrained(\n    model_id,\n    revision=revision,\n    dtype=\"auto\",\n    device_map=\"cuda\",\n)\nmessages
++      = [\n    {\n        \"role\": \"user\",\n        \"content\": \"In one sentence, explain why GPU
++      profiling is useful.\",\n    }\n]\ninputs = processor.apply_chat_template(\n    messages,\n    tokenize=True,\n    return_dict=True,\n    return_tensors=\"pt\",\n    add_generation_prompt=True,\n    enable_thinking=False,\n).to(model.device)\nwith
++      torch.inference_mode():\n    output = model.generate(**inputs, max_new_tokens=32)\ntorch.cuda.synchronize()\ngenerated
++      = processor.decode(\n    output[0][inputs[\"input_ids\"].shape[-1]:],\n    skip_special_tokens=True,\n)\nprint(f\"phase6-gemma4-complete
++      output={generated!r}\")\n"]'
+ spec:
+   backoffLimit: 0
+   template:
+     metadata:
+       labels:
+         phase6.pre6g.local/case: gemma4-e2b
++        profile-job-builder.local/enabled: 'true'
+     spec:
+       restartPolicy: Never
+       initContainers:
+@@ -39,14 +53,54 @@
+         volumeMounts:
+         - name: python-deps
+           mountPath: /python-deps
++      - name: profile-output-init
++        image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
++        command:
++        - /bin/sh
++        - -ceu
++        args:
++        - 'if [ -d /profile-output/phase6-gemma4-20260726-132018 ] && [ -n "$(find /profile-output/phase6-gemma4-20260726-132018
++          -mindepth 1 -maxdepth 1 -print -quit)" ]; then printf ''refusing to reuse non-empty artifact
++          directory: /profile-output/phase6-gemma4-20260726-132018\n'' >&2; exit 73; fi; mkdir -p /profile-output/phase6-gemma4-20260726-132018
++          && chmod 0777 /profile-output/phase6-gemma4-20260726-132018'
++        resources:
++          requests:
++            cpu: 5m
++            memory: 8Mi
++          limits:
++            cpu: 100m
++            memory: 32Mi
++        volumeMounts:
++        - name: profile-output
++          mountPath: /profile-output
++        securityContext:
++          allowPrivilegeEscalation: false
++          capabilities:
++            drop:
++            - ALL
+       containers:
+       - name: trainer
+         image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+         imagePullPolicy: IfNotPresent
+         workingDir: /workspace
+         command:
++        - /bin/sh
++        - -ceu
++        args:
++        - |
++          report=/profile-output/phase6-gemma4-20260726-132018/profile.nsys-rep
++          set +e
++          /opt/profiler/nsys/target-linux-sbsa-armv8/nsys profile   --trace=cuda,nvtx,osrt   --sample=none   --cpuctxsw=none   --force-overwrite=true   --output=/profile-output/phase6-gemma4-20260726-132018/profile   "$@"
++          application_exit_code=$?
++          set -e
++          if [ -e "$report" ]; then
++            set -- $(sha256sum "$report")
++            printf '%s\n' "$1" > /profile-output/phase6-gemma4-20260726-132018/.expected-sha256
++          fi
++          printf '%s\n' "$application_exit_code" > /profile-output/phase6-gemma4-20260726-132018/.application-finished
++          exit "$application_exit_code"
++        - --
+         - python3
+-        args:
+         - -c
+         - |
+           import torch
+@@ -96,6 +150,10 @@
+           value: '1'
+         - name: TOKENIZERS_PARALLELISM
+           value: 'false'
++        - name: TMPDIR
++          value: /profile-output/phase6-gemma4-20260726-132018
++        - name: PROFILE_OUTPUT_DIR
++          value: /profile-output/phase6-gemma4-20260726-132018
+         resources:
+           requests:
+             cpu: '2'
+@@ -113,6 +171,186 @@
+           mountPath: /model-cache
+         - name: workspace
+           mountPath: /workspace
++        - name: nsys-runtime
++          mountPath: /opt/profiler/nsys
++          readOnly: true
++        - name: profile-output
++          mountPath: /profile-output
++      - name: profile-collector
++        image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
++        command:
++        - /bin/sh
++        - -ceu
++        args:
++        - |
++          report=/profile-output/phase6-gemma4-20260726-132018/profile.nsys-rep
++          application_finished=/profile-output/phase6-gemma4-20260726-132018/.application-finished
++          expected_checksum_file=/profile-output/phase6-gemma4-20260726-132018/.expected-sha256
++          ready=/profile-output/phase6-gemma4-20260726-132018/.collector-ready
++          ack=/profile-output/phase6-gemma4-20260726-132018/.collected
++          metadata=/profile-output/phase6-gemma4-20260726-132018/profile-metadata.json
++          stats_stderr=/profile-output/phase6-gemma4-20260726-132018/nsys-stats.stderr.txt
++          nsys_binary="${NSYS_BINARY_OVERRIDE:-/opt/profiler/nsys/target-linux-sbsa-armv8/nsys}"
++          required_reports="${PROFILE_REQUIRED_REPORTS:-osrt_sum cuda_api_sum cuda_gpu_kern_sum cuda_gpu_mem_time_sum cuda_gpu_mem_size_sum}"
++          report_exists=false
++          report_size_bytes=0
++          report_valid=false
++          stats_complete=false
++          expected_checksum=
++          actual_checksum=
++          checksum_match=false
++          application_exit_code=
++
++          write_metadata() {
++            overall_status=$1
++            failure_reason=$2
++            collector_exit_code=$3
++            nsys_version=$("$nsys_binary" --version 2>/dev/null | head -n 1 | tr '"' "'" || true)
++            finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
++            printf '{"status":"%s","overall_status":"%s","failure_reason":"%s","application_exit_code":%s,"report_exists":%s,"report_size_bytes":%s,"report_valid":%s,"expected_checksum":"%s","actual_checksum":"%s","checksum_match":%s,"stats_complete":%s,"collector_exit_code":%s,"nsys_version":"%s","finished_at":"%s"}\n'     "$overall_status" "$overall_status" "$failure_reason"     "${application_exit_code:-null}" "$report_exists" "$report_size_bytes"     "$report_valid" "$expected_checksum" "$actual_checksum" "$checksum_match"     "$stats_complete" "$collector_exit_code" "$nsys_version" "$finished_at"     > "$metadata"
++          }
++
++          await_collection_ack() {
++            result=$1
++            touch "$ready"
++            collection_deadline=$(( $(date +%s) + 3600 ))
++            while [ ! -f "$ack" ]; do
++              if [ "$(date +%s)" -ge "$collection_deadline" ]; then
++                failure_reason=collection_ack_timeout
++                write_metadata failed "$failure_reason" 125
++                exit 125
++              fi
++              sleep 2
++            done
++            exit "$result"
++          }
++
++          fail_collection() {
++            failure_reason=$1
++            collector_exit_code=$2
++            write_metadata failed "$failure_reason" "$collector_exit_code"
++            await_collection_ack "$collector_exit_code"
++          }
++
++          deadline=$(( $(date +%s) + 3600 ))
++          while [ ! -f "$application_finished" ]; do
++            if [ "$(date +%s)" -ge "$deadline" ]; then
++              fail_collection application_timeout 124
++            fi
++            sleep 2
++          done
++
++          application_exit_code=$(cat "$application_finished")
++          case "$application_exit_code" in
++            ''|*[!0-9]*) fail_collection invalid_application_exit_code 126 ;;
++          esac
++
++          if [ ! -e "$report" ]; then
++            fail_collection missing_report 20
++          fi
++          report_exists=true
++          report_size_bytes=$(wc -c < "$report")
++          if [ "$report_size_bytes" -eq 0 ]; then
++            fail_collection empty_report 21
++          fi
++
++          if [ ! -s "$expected_checksum_file" ]; then
++            fail_collection expected_checksum_missing 22
++          fi
++          expected_checksum=$(cat "$expected_checksum_file")
++          set -- $(sha256sum "$report")
++          actual_checksum=$1
++          if [ "$expected_checksum" != "$actual_checksum" ]; then
++            fail_collection integrity_failure 23
++          fi
++          checksum_match=true
++
++          mkdir -p /profile-output/phase6-gemma4-20260726-132018/tmp-collector
++          export TMPDIR=/profile-output/phase6-gemma4-20260726-132018/tmp-collector
++          parts=/profile-output/phase6-gemma4-20260726-132018/stats-parts
++          mkdir -p "$parts"
++          : > "$stats_stderr"
++
++          run_stats() {
++            stats_report_name=$1
++            stats_format=$2
++            stats_output=$3
++            stats_error="$stats_output.stderr"
++            if [ "$stats_format" = csv ]; then
++              "$nsys_binary" stats --force-export=true --format=csv       --report="$stats_report_name" "$report"       > "$stats_output" 2> "$stats_error"
++              stats_exit=$?
++            else
++              "$nsys_binary" stats --force-export=true --report="$stats_report_name" "$report"       > "$stats_output" 2> "$stats_error"
++              stats_exit=$?
++            fi
++            cat "$stats_error" >> "$stats_stderr"
++            if [ "$stats_exit" -ne 0 ] || [ ! -s "$stats_output" ]; then
++              return 1
++            fi
++            if grep -Eiq 'Exportation error:|ERROR:' "$stats_output" "$stats_error"; then
++              printf 'nsys stats emitted an error despite exit code %s:\n' "$stats_exit"       >> "$stats_stderr"
++              cat "$stats_output" >> "$stats_stderr"
++              return 1
++            fi
++            return 0
++          }
++
++          if ! run_stats osrt_sum text "$parts/report-validation.txt"; then
++            header=$(head -c 28 "$report" || true)
++            case "$header" in
++              "NVIDIA Tegra Profiler Report"*) fail_collection corrupted_report 24 ;;
++              *) fail_collection parse_failure 25 ;;
++            esac
++          fi
++          report_valid=true
++
++          required_reports_csv=$(printf '%s' "$required_reports" | tr ' ' ',')
++          all_reports="$required_reports_csv,nvtx_sum"
++          stats_text_candidate="$parts/nsys-stats.txt.partial"
++          stats_csv_candidate="$parts/nsys-stats.csv.partial"
++          if ! run_stats "$all_reports" text "$stats_text_candidate"; then
++            fail_collection stats_failure 26
++          fi
++          if ! run_stats "$all_reports" csv "$stats_csv_candidate"; then
++            fail_collection stats_failure 26
++          fi
++
++          for summary in   'OS Runtime Summary'   'CUDA API Summary'   'CUDA GPU Kernel Summary'   'CUDA GPU MemOps Summary (by Time)'   'CUDA GPU MemOps Summary (by Size)'; do
++            if ! grep -Fq "$summary" "$stats_text_candidate"; then
++              printf 'required summary missing: %s\n' "$summary" >> "$stats_stderr"
++              fail_collection stats_failure 26
++            fi
++          done
++
++          mv "$stats_text_candidate" /profile-output/phase6-gemma4-20260726-132018/nsys-stats.txt
++          mv "$stats_csv_candidate" /profile-output/phase6-gemma4-20260726-132018/nsys-stats.csv
++          stats_complete=true
++          if [ "$application_exit_code" -ne 0 ]; then
++            fail_collection application_exit_nonzero 27
++          fi
++          write_metadata success none 0
++          await_collection_ack 0
++        env:
++        - name: PROFILE_JOB_NAME
++          value: phase6-gemma4-20260726-132018
++        resources:
++          requests:
++            cpu: 50m
++            memory: 128Mi
++          limits:
++            cpu: '1'
++            memory: 1Gi
++        volumeMounts:
++        - name: nsys-runtime
++          mountPath: /opt/profiler/nsys
++          readOnly: true
++        - name: profile-output
++          mountPath: /profile-output
++        securityContext:
++          allowPrivilegeEscalation: false
++          capabilities:
++            drop:
++            - ALL
+       volumes:
+       - name: python-deps
+         emptyDir: {}
+@@ -121,3 +359,15 @@
+           sizeLimit: 14Gi
+       - name: workspace
+         emptyDir: {}
++      - name: nsys-runtime
++        hostPath:
++          path: /opt/nvidia/nsight-systems/2025.3.2
++          type: Directory
++      - name: profile-output
++        persistentVolumeClaim:
++          claimName: profile-artifacts
++      runtimeClassName: nvidia
++      nodeSelector:
++        kubernetes.io/hostname: gx10-c206
++  parallelism: 1
++  completions: 1

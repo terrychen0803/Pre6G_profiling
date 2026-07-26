@@ -1,0 +1,4 @@
+time="2026-07-26T13:28:58+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-26T13:28:58+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-26T13:28:58+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+No resources found in profiling namespace.

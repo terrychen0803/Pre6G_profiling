@@ -1,0 +1,24 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "name": "external-gemma4-e2b",
+  "namespace": "profiling",
+  "targetContainer": "trainer",
+  "image": "ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757",
+  "command": [
+    "python3"
+  ],
+  "args": [
+    "-c",
+    "import torch\nfrom transformers import AutoModelForMultimodalLM, AutoProcessor\n\nmodel_id = \"unsloth/gemma-4-E2B-it-qat-w4a16\"\nrevision = \"123e194\"\nassert torch.cuda.is_available(), \"CUDA is required\"\nprocessor = AutoProcessor.from_pretrained(\n    model_id,\n    revision=revision,\n)\nmodel = AutoModelForMultimodalLM.from_pretrained(\n    model_id,\n    revision=revision,\n    dtype=\"auto\",\n    device_map=\"cuda\",\n)\nmessages = [\n    {\n        \"role\": \"user\",\n        \"content\": \"In one sentence, explain why GPU profiling is useful.\",\n    }\n]\ninputs = processor.apply_chat_template(\n    messages,\n    tokenize=True,\n    return_dict=True,\n    return_tensors=\"pt\",\n    add_generation_prompt=True,\n    enable_thinking=False,\n).to(model.device)\nwith torch.inference_mode():\n    output = model.generate(**inputs, max_new_tokens=32)\ntorch.cuda.synchronize()\ngenerated = processor.decode(\n    output[0][inputs[\"input_ids\"].shape[-1]:],\n    skip_special_tokens=True,\n)\nprint(f\"phase6-gemma4-complete output={generated!r}\")\n"
+  ],
+  "gpuResource": "nvidia.com/gpu.shared",
+  "gpuMode": "shared",
+  "gpuLimits": "1",
+  "gpuRequests": "1",
+  "volumes": [
+    "python-deps",
+    "model-cache",
+    "workspace"
+  ]
+}

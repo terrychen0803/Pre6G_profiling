@@ -9,7 +9,7 @@
 - 凍結目標與驗收規格：[`docs/TARGET_SPEC.md`](docs/TARGET_SPEC.md)
 - 動態進度與 blockers：[`docs/PROGRESS_TRACKER.md`](docs/PROGRESS_TRACKER.md)
 - `inspect`、`validate`、`build`、`diff`、`run`、`collect`、`clean` CLI
-- Offline unit and transformation integration tests：45/45 passed
+- Offline unit and transformation integration tests：53/53 passed
 - Ultralytics YOLO26n + synthetic 小型資料集單 GPU短訓練範例
 - 手寫與 Builder 產生的 Profile Job YAML
 - `gx10-c206` host Nsight smoke test：實際產生並解析 CUDA `.nsys-rep`
@@ -24,6 +24,8 @@
   checksum mismatch、partial stats、application failure 均不會誤判成功
 - Nsight Systems 2025.3.2 GUI 人工驗收已通過：report 可開啟且 primary
   YOLO process 具有 CUDA、NVTX 與 OS Runtime traces
+- Phase 6 Gemma 4 E2B 外部 LLM compatibility E2E 已通過；24,280,116-byte
+  report 已直接由 `nsys stats` 解析為 TXT、CSV 與 SQLite，無需 GUI
 
 Phase 1 與 Phase 2 已完整通過。
 `profiling/profile-artifacts` 已由管理者建立並驗證為 Bound（20Gi、RWO、
@@ -34,6 +36,10 @@ stats failure 三條真實 Kubernetes E2E 均功能 PASS，並有七 CLI
 transcripts、metadata、artifact 與 clean 證據，因此 Phase 5 已完成。
 本次驗收以 source-tree SHA-256 綁定；Git commit provenance 延後至正式
 版本交付前補充，不阻塞 Phase 6 外部使用者 YAML 驗收。
+
+Phase 6 已完成。Gemma report 的 producer、collector 與本機 SHA-256
+一致，且 OS Runtime、CUDA API、GPU kernel 與 GPU MemOps summaries
+完整。GUI timeline 檢查依目前技術驗證目標列為非阻塞後續分析。
 
 GX10 工程 smoke test 使用 `nvidia.com/gpu.shared: "1"`。此結果只驗證
 profile pipeline，不代表獨占 GPU 效能基準。
@@ -47,7 +53,7 @@ user-job.yaml
   → human diff review
   → run on gx10-c206
   → collect artifacts
-  → nsys stats / Nsight Systems GUI
+  → nsys stats structured output
 ```
 
 ## Artifact 結構
@@ -72,6 +78,11 @@ GUI 驗收的已知非阻塞限制：目前未收集 scheduler trace，因此 CP
 utilization 僅由 OS Runtime 推估；Unified Memory tracing 不受目前
 driver/config 支援；非 CUDA auxiliary PID 117 沒有 CUDA/NVTX events，
 但 primary workload PID 96 的 traces 完整。
+
+`.nsys-rep` 是 Nsight Systems 二進位資料，不應以文字編輯器讀取。
+自動化流程直接使用 `nsys stats` 解析檔案；日常分析可優先讀取 Collector
+已輸出的 `nsys-stats.txt`、`nsys-stats.csv`、`profile.sqlite` 與
+`profile-metadata.json`。
 
 ## Local Quick Start
 

@@ -1,0 +1,35 @@
+{
+  "result": "pass",
+  "targetContainer": "trainer",
+  "preserved": [
+    "application.name",
+    "application.image",
+    "application.imagePullPolicy",
+    "application.workingDir",
+    "application.resources",
+    "application.securityContext",
+    "application.envFrom",
+    "application.env(non-reserved)",
+    "application.volumeMounts(source-prefix)",
+    "pod.volumes(source-prefix)",
+    "pod.initContainers(source-prefix)",
+    "pod.securityContext",
+    "pod.serviceAccountName",
+    "pod.imagePullSecrets",
+    "pod.tolerations",
+    "pod.affinity",
+    "pod.schedulerName",
+    "pod.priorityClassName",
+    "application.argv",
+    "metadata.original-command-annotation"
+  ],
+  "controlled_changes": [
+    "metadata and Job execution fields",
+    "application command/args profiler wrapper",
+    "application reserved env",
+    "profile-output and nsys-runtime mounts",
+    "profile-output-init and profile-collector",
+    "GX10 nodeSelector and RuntimeClass"
+  ],
+  "unexpected_changes": []
+}

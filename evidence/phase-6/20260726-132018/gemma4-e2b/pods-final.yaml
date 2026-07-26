@@ -1,0 +1,647 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2026-07-26T05:22:19Z"
+    generateName: phase6-gemma4-20260726-132018-
+    generation: 1
+    labels:
+      batch.kubernetes.io/controller-uid: 10453488-67b0-49d5-befe-c641fe3f90fc
+      batch.kubernetes.io/job-name: phase6-gemma4-20260726-132018
+      controller-uid: 10453488-67b0-49d5-befe-c641fe3f90fc
+      job-name: phase6-gemma4-20260726-132018
+      phase6.pre6g.local/case: gemma4-e2b
+      profile-job-builder.local/enabled: "true"
+    name: phase6-gemma4-20260726-132018-jxq6p
+    namespace: profiling
+    ownerReferences:
+    - apiVersion: batch/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Job
+      name: phase6-gemma4-20260726-132018
+      uid: 10453488-67b0-49d5-befe-c641fe3f90fc
+    resourceVersion: "3062293"
+    uid: 400e1c88-0d56-497d-a08c-b1b23513a02c
+  spec:
+    containers:
+    - args:
+      - |
+        report=/profile-output/phase6-gemma4-20260726-132018/profile.nsys-rep
+        set +e
+        /opt/profiler/nsys/target-linux-sbsa-armv8/nsys profile   --trace=cuda,nvtx,osrt   --sample=none   --cpuctxsw=none   --force-overwrite=true   --output=/profile-output/phase6-gemma4-20260726-132018/profile   "$@"
+        application_exit_code=$?
+        set -e
+        if [ -e "$report" ]; then
+          set -- $(sha256sum "$report")
+          printf '%s\n' "$1" > /profile-output/phase6-gemma4-20260726-132018/.expected-sha256
+        fi
+        printf '%s\n' "$application_exit_code" > /profile-output/phase6-gemma4-20260726-132018/.application-finished
+        exit "$application_exit_code"
+      - --
+      - python3
+      - -c
+      - |
+        import torch
+        from transformers import AutoModelForMultimodalLM, AutoProcessor
+
+        model_id = "unsloth/gemma-4-E2B-it-qat-w4a16"
+        revision = "123e194"
+        assert torch.cuda.is_available(), "CUDA is required"
+        processor = AutoProcessor.from_pretrained(
+            model_id,
+            revision=revision,
+        )
+        model = AutoModelForMultimodalLM.from_pretrained(
+            model_id,
+            revision=revision,
+            dtype="auto",
+            device_map="cuda",
+        )
+        messages = [
+            {
+                "role": "user",
+                "content": "In one sentence, explain why GPU profiling is useful.",
+            }
+        ]
+        inputs = processor.apply_chat_template(
+            messages,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt",
+            add_generation_prompt=True,
+            enable_thinking=False,
+        ).to(model.device)
+        with torch.inference_mode():
+            output = model.generate(**inputs, max_new_tokens=32)
+        torch.cuda.synchronize()
+        generated = processor.decode(
+            output[0][inputs["input_ids"].shape[-1]:],
+            skip_special_tokens=True,
+        )
+        print(f"phase6-gemma4-complete output={generated!r}")
+      command:
+      - /bin/sh
+      - -ceu
+      env:
+      - name: PYTHONPATH
+        value: /python-deps
+      - name: HF_HOME
+        value: /model-cache
+      - name: HF_HUB_DISABLE_TELEMETRY
+        value: "1"
+      - name: TOKENIZERS_PARALLELISM
+        value: "false"
+      - name: TMPDIR
+        value: /profile-output/phase6-gemma4-20260726-132018
+      - name: PROFILE_OUTPUT_DIR
+        value: /profile-output/phase6-gemma4-20260726-132018
+      image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+      imagePullPolicy: IfNotPresent
+      name: trainer
+      resources:
+        limits:
+          cpu: "8"
+          memory: 32Gi
+          nvidia.com/gpu.shared: "1"
+        requests:
+          cpu: "2"
+          memory: 12Gi
+          nvidia.com/gpu.shared: "1"
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /python-deps
+        name: python-deps
+        readOnly: true
+      - mountPath: /model-cache
+        name: model-cache
+      - mountPath: /workspace
+        name: workspace
+      - mountPath: /opt/profiler/nsys
+        name: nsys-runtime
+        readOnly: true
+      - mountPath: /profile-output
+        name: profile-output
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-5rg88
+        readOnly: true
+      workingDir: /workspace
+    - args:
+      - |
+        report=/profile-output/phase6-gemma4-20260726-132018/profile.nsys-rep
+        application_finished=/profile-output/phase6-gemma4-20260726-132018/.application-finished
+        expected_checksum_file=/profile-output/phase6-gemma4-20260726-132018/.expected-sha256
+        ready=/profile-output/phase6-gemma4-20260726-132018/.collector-ready
+        ack=/profile-output/phase6-gemma4-20260726-132018/.collected
+        metadata=/profile-output/phase6-gemma4-20260726-132018/profile-metadata.json
+        stats_stderr=/profile-output/phase6-gemma4-20260726-132018/nsys-stats.stderr.txt
+        nsys_binary="${NSYS_BINARY_OVERRIDE:-/opt/profiler/nsys/target-linux-sbsa-armv8/nsys}"
+        required_reports="${PROFILE_REQUIRED_REPORTS:-osrt_sum cuda_api_sum cuda_gpu_kern_sum cuda_gpu_mem_time_sum cuda_gpu_mem_size_sum}"
+        report_exists=false
+        report_size_bytes=0
+        report_valid=false
+        stats_complete=false
+        expected_checksum=
+        actual_checksum=
+        checksum_match=false
+        application_exit_code=
+
+        write_metadata() {
+          overall_status=$1
+          failure_reason=$2
+          collector_exit_code=$3
+          nsys_version=$("$nsys_binary" --version 2>/dev/null | head -n 1 | tr '"' "'" || true)
+          finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          printf '{"status":"%s","overall_status":"%s","failure_reason":"%s","application_exit_code":%s,"report_exists":%s,"report_size_bytes":%s,"report_valid":%s,"expected_checksum":"%s","actual_checksum":"%s","checksum_match":%s,"stats_complete":%s,"collector_exit_code":%s,"nsys_version":"%s","finished_at":"%s"}\n'     "$overall_status" "$overall_status" "$failure_reason"     "${application_exit_code:-null}" "$report_exists" "$report_size_bytes"     "$report_valid" "$expected_checksum" "$actual_checksum" "$checksum_match"     "$stats_complete" "$collector_exit_code" "$nsys_version" "$finished_at"     > "$metadata"
+        }
+
+        await_collection_ack() {
+          result=$1
+          touch "$ready"
+          collection_deadline=$(( $(date +%s) + 3600 ))
+          while [ ! -f "$ack" ]; do
+            if [ "$(date +%s)" -ge "$collection_deadline" ]; then
+              failure_reason=collection_ack_timeout
+              write_metadata failed "$failure_reason" 125
+              exit 125
+            fi
+            sleep 2
+          done
+          exit "$result"
+        }
+
+        fail_collection() {
+          failure_reason=$1
+          collector_exit_code=$2
+          write_metadata failed "$failure_reason" "$collector_exit_code"
+          await_collection_ack "$collector_exit_code"
+        }
+
+        deadline=$(( $(date +%s) + 3600 ))
+        while [ ! -f "$application_finished" ]; do
+          if [ "$(date +%s)" -ge "$deadline" ]; then
+            fail_collection application_timeout 124
+          fi
+          sleep 2
+        done
+
+        application_exit_code=$(cat "$application_finished")
+        case "$application_exit_code" in
+          ''|*[!0-9]*) fail_collection invalid_application_exit_code 126 ;;
+        esac
+
+        if [ ! -e "$report" ]; then
+          fail_collection missing_report 20
+        fi
+        report_exists=true
+        report_size_bytes=$(wc -c < "$report")
+        if [ "$report_size_bytes" -eq 0 ]; then
+          fail_collection empty_report 21
+        fi
+
+        if [ ! -s "$expected_checksum_file" ]; then
+          fail_collection expected_checksum_missing 22
+        fi
+        expected_checksum=$(cat "$expected_checksum_file")
+        set -- $(sha256sum "$report")
+        actual_checksum=$1
+        if [ "$expected_checksum" != "$actual_checksum" ]; then
+          fail_collection integrity_failure 23
+        fi
+        checksum_match=true
+
+        mkdir -p /profile-output/phase6-gemma4-20260726-132018/tmp-collector
+        export TMPDIR=/profile-output/phase6-gemma4-20260726-132018/tmp-collector
+        parts=/profile-output/phase6-gemma4-20260726-132018/stats-parts
+        mkdir -p "$parts"
+        : > "$stats_stderr"
+
+        run_stats() {
+          stats_report_name=$1
+          stats_format=$2
+          stats_output=$3
+          stats_error="$stats_output.stderr"
+          if [ "$stats_format" = csv ]; then
+            "$nsys_binary" stats --force-export=true --format=csv       --report="$stats_report_name" "$report"       > "$stats_output" 2> "$stats_error"
+            stats_exit=$?
+          else
+            "$nsys_binary" stats --force-export=true --report="$stats_report_name" "$report"       > "$stats_output" 2> "$stats_error"
+            stats_exit=$?
+          fi
+          cat "$stats_error" >> "$stats_stderr"
+          if [ "$stats_exit" -ne 0 ] || [ ! -s "$stats_output" ]; then
+            return 1
+          fi
+          if grep -Eiq 'Exportation error:|ERROR:' "$stats_output" "$stats_error"; then
+            printf 'nsys stats emitted an error despite exit code %s:\n' "$stats_exit"       >> "$stats_stderr"
+            cat "$stats_output" >> "$stats_stderr"
+            return 1
+          fi
+          return 0
+        }
+
+        if ! run_stats osrt_sum text "$parts/report-validation.txt"; then
+          header=$(head -c 28 "$report" || true)
+          case "$header" in
+            "NVIDIA Tegra Profiler Report"*) fail_collection corrupted_report 24 ;;
+            *) fail_collection parse_failure 25 ;;
+          esac
+        fi
+        report_valid=true
+
+        required_reports_csv=$(printf '%s' "$required_reports" | tr ' ' ',')
+        all_reports="$required_reports_csv,nvtx_sum"
+        stats_text_candidate="$parts/nsys-stats.txt.partial"
+        stats_csv_candidate="$parts/nsys-stats.csv.partial"
+        if ! run_stats "$all_reports" text "$stats_text_candidate"; then
+          fail_collection stats_failure 26
+        fi
+        if ! run_stats "$all_reports" csv "$stats_csv_candidate"; then
+          fail_collection stats_failure 26
+        fi
+
+        for summary in   'OS Runtime Summary'   'CUDA API Summary'   'CUDA GPU Kernel Summary'   'CUDA GPU MemOps Summary (by Time)'   'CUDA GPU MemOps Summary (by Size)'; do
+          if ! grep -Fq "$summary" "$stats_text_candidate"; then
+            printf 'required summary missing: %s\n' "$summary" >> "$stats_stderr"
+            fail_collection stats_failure 26
+          fi
+        done
+
+        mv "$stats_text_candidate" /profile-output/phase6-gemma4-20260726-132018/nsys-stats.txt
+        mv "$stats_csv_candidate" /profile-output/phase6-gemma4-20260726-132018/nsys-stats.csv
+        stats_complete=true
+        if [ "$application_exit_code" -ne 0 ]; then
+          fail_collection application_exit_nonzero 27
+        fi
+        write_metadata success none 0
+        await_collection_ack 0
+      command:
+      - /bin/sh
+      - -ceu
+      env:
+      - name: PROFILE_JOB_NAME
+        value: phase6-gemma4-20260726-132018
+      image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+      imagePullPolicy: IfNotPresent
+      name: profile-collector
+      resources:
+        limits:
+          cpu: "1"
+          memory: 1Gi
+        requests:
+          cpu: 50m
+          memory: 128Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /opt/profiler/nsys
+        name: nsys-runtime
+        readOnly: true
+      - mountPath: /profile-output
+        name: profile-output
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-5rg88
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    initContainers:
+    - args:
+      - -ceu
+      - |
+        python3 -m pip install \
+          --disable-pip-version-check \
+          --no-cache-dir \
+          --target /python-deps \
+          "transformers>=5.4,<6" \
+          "accelerate>=1.10,<2" \
+          "compressed-tensors>=0.12,<1" \
+          "sentencepiece>=0.2,<1"
+      command:
+      - /bin/sh
+      image: ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+      imagePullPolicy: IfNotPresent
+      name: install-transformers
+      resources:
+        limits:
+          cpu: "4"
+          memory: 4Gi
+        requests:
+          cpu: "1"
+          memory: 1Gi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /python-deps
+        name: python-deps
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-5rg88
+        readOnly: true
+    - args:
+      - 'if [ -d /profile-output/phase6-gemma4-20260726-132018 ] && [ -n "$(find /profile-output/phase6-gemma4-20260726-132018
+        -mindepth 1 -maxdepth 1 -print -quit)" ]; then printf ''refusing to reuse
+        non-empty artifact directory: /profile-output/phase6-gemma4-20260726-132018\n''
+        >&2; exit 73; fi; mkdir -p /profile-output/phase6-gemma4-20260726-132018 &&
+        chmod 0777 /profile-output/phase6-gemma4-20260726-132018'
+      command:
+      - /bin/sh
+      - -ceu
+      image: ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+      imagePullPolicy: IfNotPresent
+      name: profile-output-init
+      resources:
+        limits:
+          cpu: 100m
+          memory: 32Mi
+        requests:
+          cpu: 5m
+          memory: 8Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /profile-output
+        name: profile-output
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-5rg88
+        readOnly: true
+    nodeName: gx10-c206
+    nodeSelector:
+      kubernetes.io/hostname: gx10-c206
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Never
+    runtimeClassName: nvidia
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - emptyDir: {}
+      name: python-deps
+    - emptyDir:
+        sizeLimit: 14Gi
+      name: model-cache
+    - emptyDir: {}
+      name: workspace
+    - hostPath:
+        path: /opt/nvidia/nsight-systems/2025.3.2
+        type: Directory
+      name: nsys-runtime
+    - name: profile-output
+      persistentVolumeClaim:
+        claimName: profile-artifacts
+    - name: kube-api-access-5rg88
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-07-26T05:26:29Z"
+      observedGeneration: 1
+      status: "False"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2026-07-26T05:23:38Z"
+      observedGeneration: 1
+      reason: PodCompleted
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2026-07-26T05:26:07Z"
+      observedGeneration: 1
+      reason: PodCompleted
+      status: "False"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2026-07-26T05:26:07Z"
+      observedGeneration: 1
+      reason: PodCompleted
+      status: "False"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2026-07-26T05:22:19Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - allocatedResources:
+        cpu: 50m
+        memory: 128Mi
+      containerID: containerd://cfc91c7df2b153c21128c8b4186289fc7b8843af87a6e567676d6bb807746898
+      image: sha256:ea17ec341c4211d1dd7f184a0dedf7dcb7945e92db20a5dde20544262214b84f
+      imageID: docker.io/library/ubuntu@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+      lastState: {}
+      name: profile-collector
+      ready: false
+      resources:
+        limits:
+          cpu: "1"
+          memory: 1Gi
+        requests:
+          cpu: 50m
+          memory: 128Mi
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://cfc91c7df2b153c21128c8b4186289fc7b8843af87a6e567676d6bb807746898
+          exitCode: 0
+          finishedAt: "2026-07-26T05:26:27Z"
+          reason: Completed
+          startedAt: "2026-07-26T05:23:39Z"
+      user:
+        linux:
+          gid: 0
+          supplementalGroups:
+          - 0
+          uid: 0
+      volumeMounts:
+      - mountPath: /opt/profiler/nsys
+        name: nsys-runtime
+        readOnly: true
+        recursiveReadOnly: Disabled
+      - mountPath: /profile-output
+        name: profile-output
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-5rg88
+        readOnly: true
+        recursiveReadOnly: Disabled
+    - allocatedResources:
+        cpu: "2"
+        memory: 12Gi
+        nvidia.com/gpu.shared: "1"
+      containerID: containerd://5d4f8cd1576e48c4bb2cb8efe7755cecef658f5d896f4d0c7fdc81dd95d81841
+      image: sha256:b0332a63bb190eb7cf8ee03800e05bd97599248a430cb3e4307ae18837bf0c7c
+      imageID: docker.io/ultralytics/ultralytics@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+      lastState: {}
+      name: trainer
+      ready: false
+      resources:
+        limits:
+          cpu: "8"
+          memory: 32Gi
+          nvidia.com/gpu.shared: "1"
+        requests:
+          cpu: "2"
+          memory: 12Gi
+          nvidia.com/gpu.shared: "1"
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://5d4f8cd1576e48c4bb2cb8efe7755cecef658f5d896f4d0c7fdc81dd95d81841
+          exitCode: 0
+          finishedAt: "2026-07-26T05:26:07Z"
+          reason: Completed
+          startedAt: "2026-07-26T05:23:38Z"
+      user:
+        linux:
+          gid: 0
+          supplementalGroups:
+          - 0
+          uid: 0
+      volumeMounts:
+      - mountPath: /python-deps
+        name: python-deps
+        readOnly: true
+        recursiveReadOnly: Disabled
+      - mountPath: /model-cache
+        name: model-cache
+      - mountPath: /workspace
+        name: workspace
+      - mountPath: /opt/profiler/nsys
+        name: nsys-runtime
+        readOnly: true
+        recursiveReadOnly: Disabled
+      - mountPath: /profile-output
+        name: profile-output
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-5rg88
+        readOnly: true
+        recursiveReadOnly: Disabled
+    hostIP: 140.113.179.4
+    hostIPs:
+    - ip: 140.113.179.4
+    initContainerStatuses:
+    - allocatedResources:
+        cpu: "1"
+        memory: 1Gi
+      containerID: containerd://bcffc54bd85527ff19250c267a934f1d1fcc4147fcd5c250c7096648b683ed10
+      image: sha256:b0332a63bb190eb7cf8ee03800e05bd97599248a430cb3e4307ae18837bf0c7c
+      imageID: docker.io/ultralytics/ultralytics@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757
+      lastState: {}
+      name: install-transformers
+      ready: true
+      resources:
+        limits:
+          cpu: "4"
+          memory: 4Gi
+        requests:
+          cpu: "1"
+          memory: 1Gi
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://bcffc54bd85527ff19250c267a934f1d1fcc4147fcd5c250c7096648b683ed10
+          exitCode: 0
+          finishedAt: "2026-07-26T05:23:36Z"
+          reason: Completed
+          startedAt: "2026-07-26T05:22:20Z"
+      user:
+        linux:
+          gid: 0
+          supplementalGroups:
+          - 0
+          uid: 0
+      volumeMounts:
+      - mountPath: /python-deps
+        name: python-deps
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-5rg88
+        readOnly: true
+        recursiveReadOnly: Disabled
+    - allocatedResources:
+        cpu: 5m
+        memory: 8Mi
+      containerID: containerd://73376eb1220948a85a52031f328ca931c38ec2a0ed34e1160cd5108a092de05a
+      image: sha256:ea17ec341c4211d1dd7f184a0dedf7dcb7945e92db20a5dde20544262214b84f
+      imageID: docker.io/library/ubuntu@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+      lastState: {}
+      name: profile-output-init
+      ready: true
+      resources:
+        limits:
+          cpu: 100m
+          memory: 32Mi
+        requests:
+          cpu: 5m
+          memory: 8Mi
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://73376eb1220948a85a52031f328ca931c38ec2a0ed34e1160cd5108a092de05a
+          exitCode: 0
+          finishedAt: "2026-07-26T05:23:37Z"
+          reason: Completed
+          startedAt: "2026-07-26T05:23:37Z"
+      user:
+        linux:
+          gid: 0
+          supplementalGroups:
+          - 0
+          uid: 0
+      volumeMounts:
+      - mountPath: /profile-output
+        name: profile-output
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-5rg88
+        readOnly: true
+        recursiveReadOnly: Disabled
+    observedGeneration: 1
+    phase: Succeeded
+    podIP: 10.42.4.27
+    podIPs:
+    - ip: 10.42.4.27
+    qosClass: Burstable
+    startTime: "2026-07-26T05:22:19Z"
+kind: List
+metadata:
+  resourceVersion: ""

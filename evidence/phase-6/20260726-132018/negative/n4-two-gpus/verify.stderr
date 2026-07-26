@@ -1,0 +1,2 @@
+error: source Job violates the Phase 1 contract:
+- limits.nvidia.com/gpu.shared must be exactly 1

@@ -1,0 +1,6 @@
+evidence/phase-6/20260726-132018/gemma4-e2b/artifacts/profile.nsys-rep\t24280116 bytes
+evidence/phase-6/20260726-132018/gemma4-e2b/artifacts/nsys-stats.txt\t37145 bytes
+evidence/phase-6/20260726-132018/gemma4-e2b/artifacts/nsys-stats.csv\t42009 bytes
+evidence/phase-6/20260726-132018/gemma4-e2b/artifacts/profile-metadata.json\t2337 bytes
+evidence/phase-6/20260726-132018/gemma4-e2b/artifacts/application.log\t9370 bytes
+evidence/phase-6/20260726-132018/gemma4-e2b/artifacts/profile-job.yaml\t15275 bytes

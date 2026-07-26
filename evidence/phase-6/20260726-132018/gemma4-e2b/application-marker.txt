@@ -1,0 +1,1 @@
+phase6-gemma4-complete output="GPU profiling is useful because it identifies bottlenecks in a graphics application's code to optimize performance and ensure efficient resource utilization."

@@ -1,0 +1,2 @@
+error: source Job violates the Phase 1 contract:
+- reserved mount path conflict: /profile-output

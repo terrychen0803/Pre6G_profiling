@@ -1,0 +1,5 @@
+start=2026-07-26T13:20:56+08:00
+cwd=/home/good_egg/profile-job-builder
+command=.venv/bin/profile-job-builder inspect --input examples/external/gemma4-e2b/gx10-source-job.yaml --container trainer
+end=2026-07-26T13:20:57+08:00
+exit_code=0

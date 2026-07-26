@@ -1,0 +1,5 @@
+start=2026-07-26T13:28:43+08:00
+cwd=/home/good_egg/profile-job-builder
+command=.venv/bin/profile-job-builder clean --job phase6-gemma4-20260726-132018 --kubeconfig /home/good_egg/.kube/profile-job-builder.kubeconfig --context profile-job-builder@k3s --namespace profiling
+end=2026-07-26T13:28:43+08:00
+exit_code=0

@@ -1,0 +1,5 @@
+PASS	OS Runtime Summary
+PASS	CUDA API Summary
+PASS	CUDA GPU Kernel Summary
+PASS	CUDA GPU MemOps Summary (by Time)
+PASS	CUDA GPU MemOps Summary (by Size)

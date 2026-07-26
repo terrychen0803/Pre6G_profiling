@@ -1,0 +1,11 @@
+time="2026-07-26T13:21:57+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-26T13:21:57+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-26T13:21:57+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+node=gx10-c206
+ephemeral_allocatable=933678855051
+memory_allocatable=125417948Ki
+gpu_shared=4
+time="2026-07-26T13:21:57+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-26T13:21:57+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+time="2026-07-26T13:21:57+08:00" level=warning msg="open /etc/rancher/k3s/config.yaml.d: permission denied"
+Error from server (Forbidden): persistentvolumeclaims "profile-artifacts" is forbidden: User "system:serviceaccount:profiling:profile-job-builder" cannot get resource "persistentvolumeclaims" in API group "" in the namespace "profiling"

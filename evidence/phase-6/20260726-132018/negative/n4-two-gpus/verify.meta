@@ -1,0 +1,5 @@
+start=2026-07-26T13:21:33+08:00
+cwd=/home/good_egg/profile-job-builder
+command=.venv/bin/pytest -s -vv tests/test_external_compatibility.py::test_external_rejections_leave_no_partial_output\[n4-two-gpus-_request_two_gpus\]
+end=2026-07-26T13:21:33+08:00
+exit_code=0

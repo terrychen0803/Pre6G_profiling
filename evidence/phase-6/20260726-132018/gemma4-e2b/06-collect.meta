@@ -1,0 +1,5 @@
+start=2026-07-26T13:24:30+08:00
+cwd=/home/good_egg/profile-job-builder
+command=.venv/bin/profile-job-builder collect --job phase6-gemma4-20260726-132018 --container trainer --destination evidence/phase-6/20260726-132018/gemma4-e2b/artifacts --profile-job-yaml evidence/phase-6/20260726-132018/gemma4-e2b/profile-job.yaml --kubeconfig /home/good_egg/.kube/profile-job-builder.kubeconfig --context profile-job-builder@k3s --namespace profiling --timeout 3600
+end=2026-07-26T13:26:29+08:00
+exit_code=0

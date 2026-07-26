@@ -1,10 +1,11 @@
 # Profile Job Builder — Progress Tracker
 
-> 最後更新：2026-07-25  
+> 最後更新：2026-07-26
 > 當前狀態：Phase 0 至 Phase 5 已完成；Phase 5 三條 Kubernetes E2E
 > 功能路徑皆 PASS，並以 source-tree SHA-256 綁定驗收內容。Git commit
-> provenance 延後至正式版本交付前補充，不阻塞 Phase 6。Phase 6 外部
-> 使用者 YAML 待執行。YOLO26 已在
+> provenance 延後至正式版本交付前補充，不阻塞 Phase 6。Phase 6
+> Gemma 4 E2B 外部模型的 CLI、offline、Kubernetes E2E 與 CLI report
+> 結構化解析均已 PASS；GUI 依專案決策延後且不阻塞技術驗證。YOLO26 已在
 > `gx10-c206` 使用 `runtimeClassName: nvidia` 與
 > `nvidia.com/gpu.shared: "1"` 完成 training、Nsight report、stats、
 > persistence 與 CLI collection；shared GPU 結果不視為獨占效能基準。
@@ -128,15 +129,35 @@
 - [x] 以 source-tree SHA-256 綁定本次驗收內容
 - [ ] 正式版本發布前補充 Git commit SHA（非阻塞）
 
-### Phase 6 — 外部使用者 YAML
+### Phase 6 — External AI Workload Compatibility Validation（Done）
 
-- [ ] 取得一份非本專案產生且符合契約的 Job YAML
-- [ ] Builder 轉換及人工 diff 審查
-- [ ] Kubernetes 端到端執行
-- [ ] 驗證原始 application 行為與設定保留
-- [ ] 產生、解析及持久保存 artifacts
-- [ ] GUI 人工驗收
-- [ ] 保存 Phase 6 驗收證據
+子階段狀態：
+
+- Phase 6.0 Compatibility Contract：Done
+- Phase 6.1 External workload intake：Done
+- Phase 6.2 Offline compatibility verification：Done（53/53 passed）
+- Phase 6.3 Kubernetes E2E：Done
+- Phase 6.4 CLI report acceptance：Done
+- Phase 6.5 Completion and documentation release：Done
+
+- [x] 建立 `docs/EXTERNAL_JOB_CONTRACT.md`
+- [x] 定義 Core Safety、Workload Compatibility 與 GX10 environment 三層契約
+- [x] 依使用者決策將門檻收斂為一個額外 external-model positive E2E
+- [x] 選定 `unsloth/gemma-4-E2B-it-qat-w4a16` bounded generation case
+- [x] 定義一個 external positive E2E、N1–N5 negative cases 與完成門檻
+- [x] 建立 `docs/PHASE6_EXECUTION_PLAN.md`
+- [x] 建立非 YOLO fixture 衍生的 Gemma 4 E2B Job 與 model provenance
+- [x] 保存 source Job SHA-256
+- [x] 實作欄位 preservation comparator
+- [x] 完成 N1–N5 offline rejection verification
+- [x] Gemma 4 E2B 完成七 CLI Kubernetes E2E
+- [x] 驗證原始 YAML checksum 與 application semantics 保留
+- [x] 驗證六項 artifacts、三方 checksum 與必要 Nsight summaries
+- [x] report 由 `nsys stats` 從檔案成功解析，TXT/CSV 與五項必要
+  summaries 完整
+- [x] clean 後 Job/Pod 為零且本機 artifacts 保留
+- [x] 完成 `evidence/phase-6/20260726-132018/acceptance.md`
+- [ ] GUI timeline 與截圖（Deferred / Non-blocking）
 
 ## Blockers
 
@@ -175,15 +196,18 @@
 | 2026-07-25 | 3 | 有桌面工作站完成 Nsight Systems 2025.3.2 人工驗收 | matching GUI 成功匯入 report，primary PID 96 具有 CUDA/NVTX/OS Runtime traces | Phase 3 判定 PASS with non-blocking limitations；timeline correlation 截圖仍建議補存，但不阻塞驗收 |
 | 2026-07-25 | 5 | 嚴格執行三條 Kubernetes E2E 與七 CLI audit trail | 先前證據分散，且實作要求 `collect` acknowledgement 後 Job 才終止 | Success、application exit 7、collector stats failure 全部符合狀態契約；clean 後三個 Job 均 NotFound、Pods=0 |
 | 2026-07-25 | 5 | 驗收未綁定 Git SHA | `/home/good_egg/profile-job-builder` 不是 Git worktree | 功能結果已綁定 source-tree SHA-256；B-007 降為 Deferred / Non-blocking，Phase 5 判定 Done |
+| 2026-07-26 | 6 | preservation comparator 首次以 system Python 執行失敗 | system Python 未安裝 PyYAML | 改用專案 `.venv/bin/python` 重跑；20 項 preservation checks PASS，無 unexpected changes |
+| 2026-07-26 | 6 | Gemma init dependency 安裝下載額外 Torch/CUDA packages | `pip --target` 未沿用 base image 的既有套件解析 | 本次 E2E 成功；列為非阻塞交付優化，正式使用建議改成 pinned ARM64 image |
+| 2026-07-26 | 6 | 操作角色無法直接 `get` PVC | Profile Job RBAC 維持最小權限 | PVC 已由 Phase 4 證明 Bound/persistent，本次 Pod 實際 mount、write、collect 成功，不擴張權限 |
+| 2026-07-26 | 6 | 新 shell 未明確指定 kubeconfig 時連線 `localhost:8080` | 驗收環境變數未跨 shell 繼承 | 最終狀態查詢以明確 `--kubeconfig`/`--context` 重跑並 PASS；失敗輸出保留，不影響 Job |
+| 2026-07-26 | 6 | 原 Phase 6 gate 要求新 report 的 GUI 截圖 | 當前目標是技術驗證與檔案式自動解析，不是互動式人工分析 | GUI 降為 Deferred / Non-blocking；以 `nsys stats` 實際解析、必要 summaries、TXT/CSV、metadata 與 checksum 作為完成門檻 |
 
 ## Current Action Items
 
-1. 取得非本專案產生、符合 frozen contract 的外部使用者 Job YAML，
-   執行 Phase 6。
-2. 正式版本交付前，將專案置於 Git worktree 並補充 commit provenance
+1. 正式版本交付前，將專案置於 Git worktree 並補充 commit provenance
    （非阻塞）。
-3. 非阻塞補強：將 overall timeline 與 CUDA API/kernel correlation
-   截圖存入 `evidence/phase-3/gui/`。
+2. 非阻塞選項：未來需要互動效能分析時，再以 GUI 開啟保存的
+   `.nsys-rep`。
 
 ## Evidence Index
 
@@ -208,3 +232,10 @@
 - `evidence/phase-5/20260725-124855/cluster-integration.md`：三條真實
   Kubernetes E2E、七 CLI transcripts、metadata/artifact/checksum 與 clean
   驗證；PASS，並以 source-tree SHA-256 綁定。
+- `docs/EXTERNAL_JOB_CONTRACT.md`：Phase 6A external provenance、相容性
+  邊界、欄位 preservation 與 completion gate。
+- `docs/PHASE6_EXECUTION_PLAN.md`：Phase 6 分階段執行、證據結構、比較器與
+  E2E/GUI 驗收程序。
+- `evidence/phase-6/20260726-132018/acceptance.md`：Gemma 4 E2B 七 CLI、
+  Kubernetes E2E、field preservation、negative cases、artifacts、
+  checksum、CLI structured summaries 與 clean 證據；Phase 6 PASS。

@@ -1,0 +1,5 @@
+error: source Job violates the Phase 1 contract:
+- exactly one application container is supported; found 2
+- application container must set exactly one supported GPU limit (nvidia.com/gpu.shared or nvidia.com/gpu)
+- a non-empty string command is required in YAML or via --entrypoint
+- non-empty string args are required in YAML or via --arg

@@ -1,0 +1,4 @@
+job_get_exit_code=1
+pod_count=0
+local_report_size_bytes=24280116
+CLEAN_VALIDATION=PASS

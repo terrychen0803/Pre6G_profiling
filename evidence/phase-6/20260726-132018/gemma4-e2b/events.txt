@@ -1,0 +1,16 @@
+LAST SEEN   TYPE     REASON             OBJECT                                    MESSAGE
+5m37s       Normal   Scheduled          pod/phase6-gemma4-20260726-132018-jxq6p   Successfully assigned profiling/phase6-gemma4-20260726-132018-jxq6p to gx10-c206
+5m38s       Normal   Pulled             pod/phase6-gemma4-20260726-132018-jxq6p   Container image "ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757" already present on machine and can be accessed by the pod
+5m38s       Normal   Created            pod/phase6-gemma4-20260726-132018-jxq6p   Container created
+5m38s       Normal   SuccessfulCreate   job/phase6-gemma4-20260726-132018         Created pod: phase6-gemma4-20260726-132018-jxq6p
+5m37s       Normal   Started            pod/phase6-gemma4-20260726-132018-jxq6p   Container started
+4m20s       Normal   Started            pod/phase6-gemma4-20260726-132018-jxq6p   Container started
+4m20s       Normal   Created            pod/phase6-gemma4-20260726-132018-jxq6p   Container created
+4m20s       Normal   Pulled             pod/phase6-gemma4-20260726-132018-jxq6p   Container image "ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab" already present on machine and can be accessed by the pod
+4m19s       Normal   Pulled             pod/phase6-gemma4-20260726-132018-jxq6p   Container image "ultralytics/ultralytics:8.4.104-nvidia-arm64@sha256:7db35781a755d11717f67b085f71b9b2ddee6c491c958e76e2526597a85b4757" already present on machine and can be accessed by the pod
+4m19s       Normal   Created            pod/phase6-gemma4-20260726-132018-jxq6p   Container created
+4m19s       Normal   Started            pod/phase6-gemma4-20260726-132018-jxq6p   Container started
+4m19s       Normal   Pulled             pod/phase6-gemma4-20260726-132018-jxq6p   Container image "ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab" already present on machine and can be accessed by the pod
+4m19s       Normal   Created            pod/phase6-gemma4-20260726-132018-jxq6p   Container created
+4m18s       Normal   Started            pod/phase6-gemma4-20260726-132018-jxq6p   Container started
+87s         Normal   Completed          job/phase6-gemma4-20260726-132018         Job completed
