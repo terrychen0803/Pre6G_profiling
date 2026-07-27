@@ -87,6 +87,44 @@ def test_build_without_collector_uses_empty_dir(source_job: dict) -> None:
     assert output["emptyDir"] == {}
 
 
+def test_build_accepts_explicit_nsys_profile_arguments(source_job: dict) -> None:
+    profile_args = (
+        "--trace=cuda,nvtx,cudnn,cublas,osrt",
+        "--gpu-metrics-devices=all",
+        "--sample=process-tree",
+        "--cpuctxsw=process-tree",
+        "--pytorch=autograd-shapes-nvtx,functions-trace",
+        "--cuda-memory-usage=true",
+        "--osrt-file-access=true",
+    )
+    result = build_profile_job(
+        source_job,
+        BuildConfig(target_container="app", nsys_profile_args=profile_args),
+    )
+    script = result["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    for argument in profile_args:
+        assert argument in script
+    assert "--sample=none" not in script
+
+
+def test_build_adds_capability_only_to_application_container(source_job: dict) -> None:
+    result = build_profile_job(
+        source_job,
+        BuildConfig(
+            target_container="app",
+            application_capabilities=("SYS_ADMIN",),
+        ),
+    )
+    containers = result["spec"]["template"]["spec"]["containers"]
+    app = containers[0]
+    collector = containers[1]
+    assert app["securityContext"] == {
+        "allowPrivilegeEscalation": False,
+        "capabilities": {"add": ["SYS_ADMIN"]},
+    }
+    assert collector["securityContext"]["capabilities"] == {"drop": ["ALL"]}
+
+
 def test_build_is_deterministic(source_job: dict) -> None:
     config = BuildConfig(target_container="app")
     assert build_profile_job(source_job, config) == build_profile_job(source_job, config)

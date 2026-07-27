@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import re
+import shlex
 from dataclasses import dataclass
 from typing import Any
 
@@ -22,6 +23,11 @@ NSYS_BINARY = f"{NSYS_MOUNT}/target-linux-sbsa-armv8/nsys"
 UBUNTU_ARM64_IMAGE = (
     "ubuntu:24.04@sha256:7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab"
 )
+DEFAULT_NSYS_PROFILE_ARGS = (
+    "--trace=cuda,nvtx,osrt",
+    "--sample=none",
+    "--cpuctxsw=none",
+)
 
 
 @dataclass(frozen=True)
@@ -38,6 +44,8 @@ class BuildConfig:
     include_collector: bool = True
     entrypoint: str | None = None
     args: tuple[str, ...] = ()
+    nsys_profile_args: tuple[str, ...] = DEFAULT_NSYS_PROFILE_ARGS
+    application_capabilities: tuple[str, ...] = ()
 
 
 def _dns_name(value: str) -> str:
@@ -262,14 +270,13 @@ await_collection_ack 0
 """
 
 
-def _application_script(output_dir: str) -> str:
+def _application_script(output_dir: str, profile_args: tuple[str, ...]) -> str:
+    rendered_profile_args = " \\\n  ".join(shlex.quote(arg) for arg in profile_args)
     return f"""\
 report={output_dir}/profile.nsys-rep
 set +e
 {NSYS_BINARY} profile \
-  --trace=cuda,nvtx,osrt \
-  --sample=none \
-  --cpuctxsw=none \
+  {rendered_profile_args} \
   --force-overwrite=true \
   --output={output_dir}/profile \
   "$@"
@@ -405,11 +412,19 @@ def build_profile_job(source: dict[str, Any], config: BuildConfig) -> dict[str, 
     original_args = validated.args
     app["command"] = ["/bin/sh", "-ceu"]
     app["args"] = [
-        _application_script(output_dir),
+        _application_script(output_dir, config.nsys_profile_args),
         "--",
         *original_command,
         *original_args,
     ]
+    if config.application_capabilities:
+        security_context = app.setdefault("securityContext", {})
+        security_context["allowPrivilegeEscalation"] = False
+        capabilities = security_context.setdefault("capabilities", {})
+        existing_add = capabilities.get("add", [])
+        capabilities["add"] = list(
+            dict.fromkeys([*existing_add, *config.application_capabilities])
+        )
     mounts = app.setdefault("volumeMounts", [])
     mounts.extend(
         [

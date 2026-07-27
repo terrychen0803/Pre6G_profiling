@@ -51,6 +51,20 @@ def _add_build_options(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--entrypoint", help="Full replacement executable")
     parser.add_argument("--arg", action="append", default=[], help="Replacement argument; repeat as needed")
+    parser.add_argument(
+        "--nsys-profile-arg",
+        action="append",
+        help=(
+            "Replace the default nsys profile options; repeat once per option. "
+            "Use --nsys-profile-arg=--option=value syntax."
+        ),
+    )
+    parser.add_argument(
+        "--application-capability",
+        action="append",
+        default=[],
+        help="Linux capability added only to the profiled application container; repeat as needed",
+    )
 
 
 def _config(args: argparse.Namespace) -> BuildConfig:
@@ -67,6 +81,12 @@ def _config(args: argparse.Namespace) -> BuildConfig:
         include_collector=not args.no_collector,
         entrypoint=args.entrypoint,
         args=tuple(args.arg),
+        nsys_profile_args=(
+            tuple(args.nsys_profile_arg)
+            if args.nsys_profile_arg
+            else BuildConfig.nsys_profile_args
+        ),
+        application_capabilities=tuple(args.application_capability),
     )
 
 

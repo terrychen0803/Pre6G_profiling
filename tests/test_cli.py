@@ -52,6 +52,33 @@ def test_build_and_validate_yolo_example(tmp_path: Path) -> None:
     assert "nvidia.com/gpu.shared" in rendered
 
 
+def test_build_cli_accepts_repeated_nsys_profile_arguments(tmp_path: Path) -> None:
+    output = tmp_path / "profile.yaml"
+    assert (
+        main(
+            [
+                "build",
+                "--input",
+                "examples/yolo26/user-job.yaml",
+                "--container",
+                "trainer",
+                "--output",
+                str(output),
+                "--nsys-profile-arg=--trace=cuda,nvtx,osrt",
+                "--nsys-profile-arg=--cuda-memory-usage=true",
+                "--application-capability",
+                "SYS_ADMIN",
+            ]
+        )
+        == 0
+    )
+    rendered = output.read_text(encoding="utf-8")
+    assert "--trace=cuda,nvtx,osrt" in rendered
+    assert "--cuda-memory-usage=true" in rendered
+    assert "--sample=none" not in rendered
+    assert "SYS_ADMIN" in rendered
+
+
 def test_invalid_input_returns_user_error(tmp_path: Path, capsys) -> None:
     source = tmp_path / "pod.yaml"
     source.write_text("apiVersion: v1\nkind: Pod\nmetadata:\n  name: no\n", encoding="utf-8")
